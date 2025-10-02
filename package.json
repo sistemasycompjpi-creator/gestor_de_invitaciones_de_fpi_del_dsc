@@ -1,0 +1,17 @@
+{
+  "name": "invitaciones",
+  "version": "1.0.0",
+  "description": "",
+  "main": "electron-app/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^38.2.0"
+  }
+}
+
