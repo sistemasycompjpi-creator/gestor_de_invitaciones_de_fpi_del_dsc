@@ -1,11 +1,149 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Gestor de Invitaciones</title>
+    <title>Gestor de Invitaciones de la JPi</title>
+    <link rel="stylesheet" href="./styles/style.css" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./assets/favicon.png"
+    />
   </head>
   <body>
-    <h1>¡Mi Aplicación de Escritorio Funciona! 🎉</h1>
-    <p>Esta es la vista del frontend.</p>
+    <div class="container">
+      <header>
+        <h1>🎓 Gestor de Invitaciones JPi</h1>
+      </header>
+
+      <!-- Formulario para agregar invitado -->
+      <section class="form-section">
+        <h2>➕ Agregar Nuevo Invitado</h2>
+        <form id="form-invitado">
+          <div class="form-group">
+            <label for="nombre_completo">Nombre Completo *</label>
+            <input
+              type="text"
+              id="nombre_completo"
+              name="nombre_completo"
+              required
+              placeholder="Ej: Dr. Juan Pérez García"
+            />
+          </div>
+
+          <div class="cargos-section">
+            <h3>Cargos y Organizaciones</h3>
+            <div class="cargo-group">
+              <div class="form-group">
+                <label for="cargo_1">Cargo 1</label>
+                <input
+                  type="text"
+                  id="cargo_1"
+                  name="cargo_1"
+                  placeholder="Ej: Director"
+                />
+              </div>
+              <div class="form-group">
+                <label for="organizacion_1">Organización 1</label>
+                <input
+                  type="text"
+                  id="organizacion_1"
+                  name="organizacion_1"
+                  placeholder="Ej: Instituto Tecnológico"
+                />
+              </div>
+            </div>
+
+            <div class="cargo-group">
+              <div class="form-group">
+                <label for="cargo_2">Cargo 2</label>
+                <input type="text" id="cargo_2" name="cargo_2" />
+              </div>
+              <div class="form-group">
+                <label for="organizacion_2">Organización 2</label>
+                <input type="text" id="organizacion_2" name="organizacion_2" />
+              </div>
+            </div>
+
+            <div class="cargo-group">
+              <div class="form-group">
+                <label for="cargo_3">Cargo 3</label>
+                <input type="text" id="cargo_3" name="cargo_3" />
+              </div>
+              <div class="form-group">
+                <label for="organizacion_3">Organización 3</label>
+                <input type="text" id="organizacion_3" name="organizacion_3" />
+              </div>
+            </div>
+
+            <div class="cargo-group">
+              <div class="form-group">
+                <label for="cargo_4">Cargo 4</label>
+                <input type="text" id="cargo_4" name="cargo_4" />
+              </div>
+              <div class="form-group">
+                <label for="organizacion_4">Organización 4</label>
+                <input type="text" id="organizacion_4" name="organizacion_4" />
+              </div>
+            </div>
+          </div>
+
+          <div class="checkboxes-group">
+            <h3>Roles de Asesoría</h3>
+            <div class="checkbox-item">
+              <input type="checkbox" id="es_asesor_t1" name="es_asesor_t1" />
+              <label for="es_asesor_t1">Es Asesor T1</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="es_asesor_t2" name="es_asesor_t2" />
+              <label for="es_asesor_t2">Es Asesor T2</label>
+            </div>
+            <p class="info-text">
+              ℹ️ Los roles de jurado se calculan automáticamente según las
+              reglas establecidas
+            </p>
+          </div>
+
+          <button type="submit" class="btn btn-primary">
+            ➕ Agregar Invitado
+          </button>
+        </form>
+      </section>
+
+      <!-- Filtros -->
+      <section class="filters-section">
+        <h2>🔍 Filtrar Invitados</h2>
+        <div class="filters">
+          <button class="btn-filter active" data-filter="todos">
+            📋 Todos
+          </button>
+          <button class="btn-filter" data-filter="asesor_t1">
+            👨‍🏫 Asesor T1
+          </button>
+          <button class="btn-filter" data-filter="asesor_t2">
+            👩‍🏫 Asesor T2
+          </button>
+          <button class="btn-filter" data-filter="jurado_protocolo">
+            📝 Jurado Protocolo
+          </button>
+          <button class="btn-filter" data-filter="jurado_informe">
+            📄 Jurado Informe
+          </button>
+        </div>
+        <div id="contador-filtro" class="contador">Total: 0 invitados</div>
+      </section>
+
+      <!-- Lista de invitados -->
+      <section class="lista-section">
+        <h2>👥 Lista de Invitados</h2>
+        <div id="lista-invitados" class="invitados-grid">
+          <div class="loading">Cargando...</div>
+        </div>
+      </section>
+    </div>
+
+    <script src="./js/app.js"></script>
   </body>
 </html>
+
