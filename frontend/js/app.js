@@ -1,6 +1,7 @@
 // Estado global de la aplicación
 let invitadosData = [];
 let filtroActual = "todos";
+let paginaActual = "lista";
 
 // Configuración de reintentos
 const MAX_RETRIES = 5;
@@ -9,10 +10,51 @@ const API_URL = "http://127.0.0.1:5000/api/invitados";
 
 // Inicialización cuando el DOM está listo
 window.addEventListener("DOMContentLoaded", () => {
+  configurarNavegacion();
   cargarInvitados();
   configurarFormulario();
   configurarFiltros();
+  actualizarEstadisticas();
 });
+
+// ========== SISTEMA DE NAVEGACIÓN ==========
+
+function configurarNavegacion() {
+  const navItems = document.querySelectorAll(".nav-item");
+
+  navItems.forEach((item) => {
+    item.addEventListener("click", () => {
+      const pagina = item.dataset.page;
+      cambiarPagina(pagina);
+
+      // Actualizar navegación activa
+      navItems.forEach((nav) => nav.classList.remove("active"));
+      item.classList.add("active");
+    });
+  });
+}
+
+function cambiarPagina(nombrePagina) {
+  // Ocultar todas las páginas
+  const todasLasPaginas = document.querySelectorAll(".page");
+  todasLasPaginas.forEach((pagina) => {
+    pagina.classList.remove("active");
+  });
+
+  // Mostrar la página seleccionada
+  const paginaSeleccionada = document.getElementById(`page-${nombrePagina}`);
+  if (paginaSeleccionada) {
+    paginaSeleccionada.classList.add("active");
+    paginaActual = nombrePagina;
+
+    // Actualizar datos si es necesario
+    if (nombrePagina === "lista") {
+      mostrarInvitados(invitadosData);
+    } else if (nombrePagina === "estadisticas") {
+      actualizarEstadisticas();
+    }
+  }
+}
 
 // ========== FUNCIONES DE CARGA DE DATOS ==========
 
@@ -32,6 +74,7 @@ function cargarInvitados(retryCount = 0) {
       invitadosData = invitados;
       mostrarInvitados(invitados);
       actualizarContador();
+      actualizarEstadisticas();
     })
     .catch((error) => {
       console.error("Error al obtener los invitados:", error);
@@ -132,41 +175,60 @@ function crearCardInvitado(invitado) {
     rolesHTML += '<span class="badge badge-informe">📄 Jurado Informe</span>';
   }
 
-  // Cargos y organizaciones
+  // Cargos y organizaciones - cada uno en su propia línea
   let puestosHTML = "";
   if (invitado.puestos && invitado.puestos.length > 0) {
-    puestosHTML = '<div class="puestos">';
     invitado.puestos.forEach((puesto) => {
       if (puesto.cargo || puesto.organizacion) {
         puestosHTML += `
-          <div class="puesto-item">
+          <div class="puesto-line">
             <span class="cargo">💼 ${puesto.cargo || "N/A"}</span>
-            <span class="organizacion">${puesto.organizacion || "N/A"}</span>
+            <span class="organizacion"> - ${puesto.organizacion || "N/A"}</span>
           </div>
         `;
       }
     });
-    puestosHTML += "</div>";
+  }
+
+  // Nota opcional
+  let notaHTML = "";
+  if (invitado.nota && invitado.nota.trim() !== "") {
+    notaHTML = `<span class="nota-invitado">${invitado.nota}</span>`;
   }
 
   card.innerHTML = `
-    <div class="card-header">
-      <h3 class="nombre">${invitado.nombre_completo}</h3>
-      <span class="id-badge">ID: ${invitado.id}</span>
-    </div>
-    <div class="card-body">
-      <div class="roles">
-        ${
-          rolesHTML ||
-          '<span class="badge badge-default">Sin roles asignados</span>'
-        }
+    <div class="card-content">
+      <div class="card-line-1">
+        <div class="card-line-1-left">
+          <h3 class="nombre">${invitado.nombre_completo}</h3>
+          <div class="roles">
+            ${
+              rolesHTML ||
+              '<span class="badge badge-default">Sin roles asignados</span>'
+            }
+          </div>
+        </div>
+        <span class="id-badge">ID: ${invitado.id}</span>
       </div>
       ${puestosHTML}
-    </div>
-    <div class="card-footer">
-      <button class="btn-delete" onclick="eliminarInvitado(${invitado.id})">
-        🗑️ Eliminar
-      </button>
+      <div class="caracter-line">
+        <div class="caracter-invitacion">${
+          invitado.caracter_invitacion || "Sin especificar"
+        }</div>
+      </div>
+      <div class="actions-line">
+        <div class="actions-line-left">
+          ${notaHTML}
+        </div>
+        <div class="actions-line-right">
+          <button class="btn-edit" onclick="editarInvitado(${invitado.id})">
+            ✏️ Editar
+          </button>
+          <button class="btn-delete" onclick="eliminarInvitado(${invitado.id})">
+            🗑️ Eliminar
+          </button>
+        </div>
+      </div>
     </div>
   `;
 
@@ -237,6 +299,18 @@ function configurarFormulario() {
     data.es_asesor_t1 = formData.has("es_asesor_t1");
     data.es_asesor_t2 = formData.has("es_asesor_t2");
 
+    // Verificar si estamos en modo edición
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const isEditMode = submitBtn.dataset.editMode === "true";
+
+    if (isEditMode && invitadoEnEdicion) {
+      // Actualizar invitado existente
+      await actualizarInvitado(invitadoEnEdicion.id, data);
+      form.reset();
+      return;
+    }
+
+    // Crear nuevo invitado
     try {
       const response = await fetch(API_URL, {
         method: "POST",
@@ -257,10 +331,24 @@ function configurarFormulario() {
       form.reset();
 
       // Recargar lista
-      cargarInvitados();
+      await cargarInvitados();
 
-      // Mostrar mensaje de éxito
-      mostrarNotificacion("✅ Invitado agregado correctamente", "success");
+      // Actualizar estadísticas
+      actualizarEstadisticas();
+
+      // Mostrar modal de éxito con redirección
+      mostrarModal(
+        "¡Invitado Agregado!",
+        "El invitado se ha registrado correctamente. Redirigiendo a la lista de invitados...",
+        "✅",
+        () => {
+          cambiarPagina("lista");
+          document.querySelector('[data-page="lista"]').classList.add("active");
+          document
+            .querySelector('[data-page="agregar"]')
+            .classList.remove("active");
+        }
+      );
     } catch (error) {
       console.error("Error al agregar invitado:", error);
       mostrarNotificacion(
@@ -268,6 +356,14 @@ function configurarFormulario() {
         "error"
       );
     }
+  });
+
+  // Evento para limpiar modo edición al resetear el formulario
+  form.addEventListener("reset", () => {
+    invitadoEnEdicion = null;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.textContent = "✅ Guardar Invitado";
+    delete submitBtn.dataset.editMode;
   });
 }
 
@@ -292,6 +388,9 @@ async function eliminarInvitado(id) {
     // Recargar lista
     cargarInvitados();
 
+    // Actualizar estadísticas
+    actualizarEstadisticas();
+
     // Mostrar mensaje de éxito
     mostrarNotificacion("✅ Invitado eliminado correctamente", "success");
   } catch (error) {
@@ -303,7 +402,81 @@ async function eliminarInvitado(id) {
   }
 }
 
-// ========== SISTEMA DE NOTIFICACIONES ==========
+// ========== ESTADÍSTICAS ==========
+
+function actualizarEstadisticas() {
+  if (invitadosData.length === 0) return;
+
+  // Total de invitados
+  document.getElementById("stat-total").textContent = invitadosData.length;
+
+  // Asesores T1
+  const t1Count = invitadosData.filter((inv) => inv.es_asesor_t1).length;
+  document.getElementById("stat-t1").textContent = t1Count;
+
+  // Asesores T2
+  const t2Count = invitadosData.filter((inv) => inv.es_asesor_t2).length;
+  document.getElementById("stat-t2").textContent = t2Count;
+
+  // Jurados Protocolo
+  const protocoloCount = invitadosData.filter(
+    (inv) => inv.puede_ser_jurado_protocolo
+  ).length;
+  document.getElementById("stat-protocolo").textContent = protocoloCount;
+
+  // Jurados Informe
+  const informeCount = invitadosData.filter(
+    (inv) => inv.puede_ser_jurado_informe
+  ).length;
+  document.getElementById("stat-informe").textContent = informeCount;
+
+  // Ambos jurados (protocolo E informe)
+  const ambosCount = invitadosData.filter(
+    (inv) => inv.puede_ser_jurado_protocolo && inv.puede_ser_jurado_informe
+  ).length;
+  document.getElementById("stat-ambos").textContent = ambosCount;
+}
+
+// ========== SISTEMA DE MODAL ==========
+
+function mostrarModal(titulo, mensaje, icono = "✅", callback = null) {
+  const overlay = document.getElementById("modal-overlay");
+  const modalIcon = document.getElementById("modal-icon");
+  const modalTitle = document.getElementById("modal-title");
+  const modalMessage = document.getElementById("modal-message");
+  const btnOk = document.getElementById("modal-btn-ok");
+
+  modalIcon.textContent = icono;
+  modalTitle.textContent = titulo;
+  modalMessage.textContent = mensaje;
+
+  overlay.classList.add("show");
+
+  // Manejador del botón OK
+  const handleClick = () => {
+    overlay.classList.remove("show");
+    btnOk.removeEventListener("click", handleClick);
+    if (callback) {
+      setTimeout(callback, 300);
+    }
+  };
+
+  btnOk.addEventListener("click", handleClick);
+
+  // Cerrar con ESC
+  const handleEsc = (e) => {
+    if (e.key === "Escape") {
+      overlay.classList.remove("show");
+      document.removeEventListener("keydown", handleEsc);
+      if (callback) {
+        setTimeout(callback, 300);
+      }
+    }
+  };
+  document.addEventListener("keydown", handleEsc);
+}
+
+// ========== SISTEMA DE NOTIFICACIONES (Deprecado) ==========
 
 function mostrarNotificacion(mensaje, tipo = "info") {
   // Crear notificación
@@ -326,6 +499,130 @@ function mostrarNotificacion(mensaje, tipo = "info") {
       notificacion.remove();
     }, 300);
   }, 3000);
+}
+
+// ========== FUNCIÓN PARA EDITAR INVITADO ==========
+
+let invitadoEnEdicion = null;
+
+async function editarInvitado(id) {
+  try {
+    // Obtener datos del invitado
+    const invitado = invitadosData.find((inv) => inv.id === id);
+    if (!invitado) {
+      throw new Error("Invitado no encontrado");
+    }
+
+    // Guardar referencia del invitado en edición
+    invitadoEnEdicion = invitado;
+
+    // Cambiar a la página de agregar
+    cambiarPagina("agregar");
+    document.querySelector('[data-page="agregar"]').classList.add("active");
+    document.querySelector('[data-page="lista"]').classList.remove("active");
+
+    // Llenar formulario con datos del invitado
+    const form = document.getElementById("form-invitado");
+
+    // Nombre
+    form.querySelector("#nombre_completo").value =
+      invitado.nombre_completo || "";
+
+    // Carácter de la invitación
+    form.querySelector("#caracter_invitacion").value =
+      invitado.caracter_invitacion || "";
+
+    // Nota del invitado
+    form.querySelector("#nota").value = invitado.nota || "";
+
+    // Cargos y organizaciones
+    if (invitado.puestos && invitado.puestos.length > 0) {
+      invitado.puestos.forEach((puesto, index) => {
+        const num = index + 1;
+        const cargoInput = form.querySelector(`#cargo_${num}`);
+        const orgInput = form.querySelector(`#organizacion_${num}`);
+
+        if (cargoInput) cargoInput.value = puesto.cargo || "";
+        if (orgInput) orgInput.value = puesto.organizacion || "";
+      });
+    }
+
+    // Checkboxes de asesoría
+    form.querySelector("#es_asesor_t1").checked =
+      invitado.es_asesor_t1 || false;
+    form.querySelector("#es_asesor_t2").checked =
+      invitado.es_asesor_t2 || false;
+
+    // Cambiar el texto del botón submit
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.textContent = "💾 Actualizar Invitado";
+    submitBtn.dataset.editMode = "true";
+
+    // Scroll al inicio
+    window.scrollTo(0, 0);
+
+    mostrarNotificacion(
+      "📝 Editando invitado: " + invitado.nombre_completo,
+      "info"
+    );
+  } catch (error) {
+    console.error("Error al cargar invitado para editar:", error);
+    mostrarNotificacion("❌ Error al cargar datos del invitado", "error");
+  }
+}
+
+async function actualizarInvitado(id, data) {
+  try {
+    const response = await fetch(`${API_URL}/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al actualizar el invitado");
+    }
+
+    const invitadoActualizado = await response.json();
+    console.log("Invitado actualizado:", invitadoActualizado);
+
+    // Recargar lista
+    await cargarInvitados();
+
+    // Actualizar estadísticas
+    actualizarEstadisticas();
+
+    // Limpiar modo edición
+    invitadoEnEdicion = null;
+
+    // Restaurar botón submit
+    const form = document.getElementById("form-invitado");
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.textContent = "✅ Guardar Invitado";
+    delete submitBtn.dataset.editMode;
+
+    // Mostrar modal de éxito con redirección
+    mostrarModal(
+      "¡Invitado Actualizado!",
+      "Los cambios se han guardado correctamente. Redirigiendo a la lista de invitados...",
+      "✅",
+      () => {
+        cambiarPagina("lista");
+        document.querySelector('[data-page="lista"]').classList.add("active");
+        document
+          .querySelector('[data-page="agregar"]')
+          .classList.remove("active");
+      }
+    );
+  } catch (error) {
+    console.error("Error al actualizar invitado:", error);
+    mostrarNotificacion(
+      "❌ Error al actualizar invitado: " + error.message,
+      "error"
+    );
+  }
 }
 
 // Hacer disponible globalmente para onclick

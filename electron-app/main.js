@@ -7,13 +7,17 @@ let backendProcess;
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
-    width: 1024,
-    height: 768,
+    width: 1920,
+    height: 1080,
+    icon: path.join(__dirname, "../assets/JPi-fondo-blanco.ico"),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
     },
   });
+
+  // Maximizar la ventana al inicio
+  mainWindow.maximize();
 
   mainWindow.loadFile(path.join(__dirname, "../frontend/index.html"));
 }

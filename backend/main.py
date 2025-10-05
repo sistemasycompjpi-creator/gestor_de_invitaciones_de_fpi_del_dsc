@@ -18,6 +18,8 @@ CORS(app)
 class Invitado(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre_completo = db.Column(db.String(200), nullable=False)
+    caracter_invitacion = db.Column(db.String(300), nullable=False)  # Motivo de la invitación
+    nota = db.Column(db.Text)  # Notas opcionales del usuario
     
     cargo_1 = db.Column(db.String(200))
     organizacion_1 = db.Column(db.String(200))
@@ -66,6 +68,8 @@ class Invitado(db.Model):
         data = {
             'id': self.id,
             'nombre_completo': self.nombre_completo,
+            'caracter_invitacion': self.caracter_invitacion,
+            'nota': self.nota,
         }
 
         # Construir lista de puestos sólo con campos presentes
@@ -124,11 +128,17 @@ def create_invitado():
 
     data = request.get_json() or {}
     nombre = data.get('nombre_completo')
+    caracter = data.get('caracter_invitacion')
+    
     if not nombre:
         return jsonify({'error': 'nombre_completo es requerido'}), 400
+    if not caracter:
+        return jsonify({'error': 'caracter_invitacion es requerido'}), 400
 
     invitado = Invitado(
         nombre_completo=nombre,
+        caracter_invitacion=caracter,
+        nota=data.get('nota'),
         cargo_1=data.get('cargo_1'),
         organizacion_1=data.get('organizacion_1'),
         cargo_2=data.get('cargo_2'),
@@ -161,6 +171,10 @@ def update_invitado(id):
     # Actualizar campos si están presentes
     if 'nombre_completo' in data:
         invitado.nombre_completo = data.get('nombre_completo')
+    if 'caracter_invitacion' in data:
+        invitado.caracter_invitacion = data.get('caracter_invitacion')
+    if 'nota' in data:
+        invitado.nota = data.get('nota')
 
     for i in range(1, 5):
         if f'cargo_{i}' in data:
