@@ -1,9 +1,69 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, Menu, shell } = require("electron");
 const path = require("path");
 const { spawn } = require("child_process");
 const http = require("http");
 
 let backendProcess;
+
+// --- Definición del Menú Personalizado ---
+const menuTemplate = [
+  {
+    label: "File",
+    submenu: [
+      {
+        label: "Exit",
+        role: "quit", // Rol predefinido para cerrar la aplicación
+      },
+    ],
+  },
+  {
+    label: "View",
+    submenu: [
+      { role: "reload" },
+      { role: "forceReload" },
+      { type: "separator" },
+      { role: "toggleDevTools" },
+    ],
+  },
+  {
+    label: "Help",
+    submenu: [
+      {
+        label: "View Documentation",
+        click: () => {
+          // Crea una nueva ventana para la documentación
+          const docWindow = new BrowserWindow({
+            width: 1024,
+            height: 768,
+            title: "Documentation",
+            icon: path.join(__dirname, "../assets/JPi-fondo-blanco.ico"),
+            webPreferences: {
+              // Es una buena práctica mantener estas opciones de seguridad,
+              // especialmente al cargar contenido remoto o local.
+              nodeIntegration: false,
+              contextIsolation: true,
+            },
+          });
+
+          // Carga el visor de documentación
+          docWindow.loadFile(
+            path.join(__dirname, "../frontend/docs-viewer.html")
+          );
+
+          // Opcional: no crear un menú para la ventana de documentación
+          docWindow.setMenu(null);
+        },
+      },
+      { type: "separator" },
+      {
+        label: "Developer",
+        click: async () => {
+          await shell.openExternal("https://github.com/JoelJohs");
+        },
+      },
+    ],
+  },
+];
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -59,6 +119,10 @@ function checkBackendReady(url, maxRetries = 30, interval = 500) {
 }
 
 app.whenReady().then(async () => {
+  // Construir y establecer el menú
+  const menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(menu);
+
   const pythonExecutable = path.join(
     __dirname,
     "../backend/venv/Scripts/python.exe"
@@ -116,3 +180,4 @@ app.on("before-quit", () => {
     backendProcess.kill("SIGTERM");
   }
 });
+

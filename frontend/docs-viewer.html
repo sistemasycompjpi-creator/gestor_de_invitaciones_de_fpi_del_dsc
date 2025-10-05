@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Documentation</title>
+    <link rel="stylesheet" href="styles/docs-style.css" />
+    <!-- Incluir la librería marked desde un CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  </head>
+  <body>
+    <div id="sidebar">
+      <h2>Documentation</h2>
+      <ul>
+        <li><a href="#" data-page="index">Introduction</a></li>
+        <li><a href="#" data-page="architecture">Architecture</a></li>
+        <li><a href="#" data-page="usage">User Guide</a></li>
+        <li><a href="#" data-page="api">API Reference</a></li>
+      </ul>
+    </div>
+    <div id="content"></div>
+
+    <script>
+      const contentDiv = document.getElementById("content");
+      const navLinks = document.querySelectorAll("#sidebar a");
+
+      // Función para cargar y renderizar un archivo Markdown
+      async function loadMarkdown(page) {
+        try {
+          const response = await fetch(`../docs/${page}.md`);
+          if (!response.ok) {
+            throw new Error(`Could not load ${page}.md`);
+          }
+          const markdown = await response.text();
+          contentDiv.innerHTML = marked.parse(markdown);
+        } catch (error) {
+          contentDiv.innerHTML = `<h1>Error</h1><p>${error.message}</p>`;
+        }
+      }
+
+      // Manejar clics en la navegación
+      navLinks.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const page = link.dataset.page;
+
+          // Actualizar clase activa
+          navLinks.forEach(l => l.classList.remove('active'));
+          link.classList.add('active');
+
+          loadMarkdown(page);
+        });
+      });
+
+      // Cargar la página de introducción por defecto
+      document.querySelector('[data-page="index"]').click();
+
+    </script>
+  </body>
+</html>
