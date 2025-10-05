@@ -3,7 +3,7 @@
 ## Para las invitaciones generadas:
 
 Las invitaciones se generarán directamente en el escritorio en:
-`~/Desktop/2025.Q4-invitaciones/` (por ejemplo)
+`~/Desktop/2025.3-invitaciones/` (por ejemplo)
 
 ## Decisiones de Arquitectura
 
@@ -32,8 +32,10 @@ Las invitaciones se generarán directamente en el escritorio en:
    - Campo nombre completo (requerido)
    - 4 pares de cargo + organización (opcionales)
    - Checkboxes para roles de asesoría (T1, T2)
+   - Caracter de la invitación
    - Cálculo automático de elegibilidad para jurados
    - Validación y feedback visual
+   - Notas sobre el invitado
 
 2. **Visualización en Cards Modernas**
 
@@ -52,9 +54,9 @@ Las invitaciones se generarán directamente en el escritorio en:
 
    - ✅ Agregar invitados (CREATE)
    - ✅ Ver invitados (READ)
+   - ✅ Editar invitados (UPDATE)
    - ✅ Eliminar invitados con confirmación (DELETE)
-   - ⏳ Editar invitados (pendiente)
-
+   
 5. **Experiencia de Usuario**
    - Sistema de notificaciones toast (éxito/error)
    - Reintentos automáticos de conexión (5 intentos)
