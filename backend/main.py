@@ -8,12 +8,15 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from document_generator import (
-    ASSETS_DIR, 
-    generate_full_dossier, 
+    generate_full_dossier,
     generate_preview_image
 )
 
+import shutil
+
 # --- CONFIGURACIÓN DE RUTAS Y BASE DE DATOS CON LOGGING ---
+# Directorio de assets de solo lectura (los que vienen con la aplicación)
+READ_ONLY_ASSETS_DIR = Path(__file__).parent / 'assets'
 # Recibimos la ruta segura para datos desde Electron.
 # Si no se pasa (modo dev), usamos el directorio del script actual.
 if len(sys.argv) > 1:
@@ -33,7 +36,10 @@ logging.info("==================================")
 logging.info("INICIANDO SERVIDOR FLASK...")
 logging.info(f"Ruta de datos de usuario recibida: {USER_DATA_PATH}")
 
-# La base de datos vivirá en la carpeta de datos del usuario
+# Directorio de assets (plantillas, etc.) en la carpeta de datos del usuario
+ASSETS_DIR = USER_DATA_PATH / 'assets'
+ASSETS_DIR.mkdir(exist_ok=True)
+logging.info(f"Directorio de assets para escritura: {ASSETS_DIR}")
 DB_PATH = USER_DATA_PATH / 'db.sqlite'
 logging.info(f"Ruta completa de la base de datos: {DB_PATH}")
 
@@ -44,6 +50,21 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 # Habilitar CORS para permitir peticiones desde el frontend servido por file:// o distinto origen
 CORS(app)
+
+def ensure_assets_exist():
+    """Asegura que los assets por defecto existan en la carpeta de datos del usuario,
+    copiándolos desde la carpeta de solo lectura si es necesario."""
+    default_files = ['plantilla_base.docx', 'convocatoria.pdf', 'cronograma.pdf']
+    for filename in default_files:
+        writable_path = ASSETS_DIR / filename
+        if not writable_path.exists():
+            read_only_path = READ_ONLY_ASSETS_DIR / filename
+            if read_only_path.exists():
+                logging.info(f"Copiando asset por defecto '{filename}' a la carpeta de datos del usuario.")
+                shutil.copy(read_only_path, writable_path)
+            else:
+                logging.warning(f"El asset por defecto '{filename}' no se encontró en la carpeta de solo lectura.")
+
 
 
 def format_fecha_carta(fecha_str):
@@ -63,15 +84,15 @@ class Invitado(db.Model):
     caracter_invitacion = db.Column(db.String(300), nullable=False)  # Motivo de la invitación
     nota = db.Column(db.Text)  # Notas opcionales del usuario
     
-    cargo_1 = db.Column(db.String(200))
-    organizacion_1 = db.Column(db.String(200))
-    abreviacion_org_1 = db.Column(db.String(50))  # Abreviación para nomenclatura (ej: ITM)
-    cargo_2 = db.Column(db.String(200))
-    organizacion_2 = db.Column(db.String(200))
-    cargo_3 = db.Column(db.String(200))
-    organizacion_3 = db.Column(db.String(200))
-    cargo_4 = db.Column(db.String(200))
-    organizacion_4 = db.Column(db.String(200))
+    # Puesto e institución (separados para mejor estructura en documentos)
+    puesto_completo = db.Column(db.String(300))  # Ej: "Jefe del Departamento de Investigación"
+    institucion = db.Column(db.String(300))  # Ej: "Instituto Tecnológico de Morelia"
+    
+    # Abreviación de la institución (para nomenclatura de archivos)
+    abreviacion_org = db.Column(db.String(50))  # Ej: "ITM", "UNAM", "IPN"
+    
+    # Campo para marcar invitados especiales (VIP, autoridades, etc.)
+    es_invitado_especial = db.Column(db.Boolean, default=False)
  
     es_asesor_t1 = db.Column(db.Boolean, default=False)
     es_asesor_t2 = db.Column(db.Boolean, default=False)
@@ -113,25 +134,15 @@ class Invitado(db.Model):
             'nombre_completo': self.nombre_completo,
             'caracter_invitacion': self.caracter_invitacion,
             'nota': self.nota,
+            'puesto_completo': self.puesto_completo,
+            'institucion': self.institucion,
+            'abreviacion_org': self.abreviacion_org,
+            'es_invitado_especial': self.es_invitado_especial,
+            'es_asesor_t1': self.es_asesor_t1,
+            'es_asesor_t2': self.es_asesor_t2,
         }
 
-        # Construir lista de puestos sólo con campos presentes
-        puestos = []
-        for i in range(1, 5):
-            cargo = getattr(self, f'cargo_{i}')
-            org = getattr(self, f'organizacion_{i}')
-            if cargo or org:
-                puestos.append({'cargo': cargo, 'organizacion': org})
-
-        if puestos:
-            data['puestos'] = puestos
-
-        # Flags de asesor
-        data['es_asesor_t1'] = self.es_asesor_t1
-        data['es_asesor_t2'] = self.es_asesor_t2
-
         # Asegurarse de que los flags de jurado estén actualizados según asesores
-        # (no persistimos aquí, sólo reflejamos la lógica)
         self.compute_jurado_flags()
 
         data['puede_ser_jurado_protocolo'] = self.puede_ser_jurado_protocolo
@@ -182,15 +193,10 @@ def create_invitado():
         nombre_completo=nombre,
         caracter_invitacion=caracter,
         nota=data.get('nota'),
-        cargo_1=data.get('cargo_1'),
-        organizacion_1=data.get('organizacion_1'),
-        abreviacion_org_1=data.get('abreviacion_org_1'),
-        cargo_2=data.get('cargo_2'),
-        organizacion_2=data.get('organizacion_2'),
-        cargo_3=data.get('cargo_3'),
-        organizacion_3=data.get('organizacion_3'),
-        cargo_4=data.get('cargo_4'),
-        organizacion_4=data.get('organizacion_4'),
+        puesto_completo=data.get('puesto_completo'),
+        institucion=data.get('institucion'),
+        abreviacion_org=data.get('abreviacion_org'),
+        es_invitado_especial=bool(data.get('es_invitado_especial', False)),
         es_asesor_t1=bool(data.get('es_asesor_t1', False)),
         es_asesor_t2=bool(data.get('es_asesor_t2', False)),
     )
@@ -219,15 +225,15 @@ def update_invitado(id):
         invitado.caracter_invitacion = data.get('caracter_invitacion')
     if 'nota' in data:
         invitado.nota = data.get('nota')
-
-    for i in range(1, 5):
-        if f'cargo_{i}' in data:
-            setattr(invitado, f'cargo_{i}', data.get(f'cargo_{i}'))
-        if f'organizacion_{i}' in data:
-            setattr(invitado, f'organizacion_{i}', data.get(f'organizacion_{i}'))
     
-    if 'abreviacion_org_1' in data:
-        invitado.abreviacion_org_1 = data.get('abreviacion_org_1')
+    if 'puesto_completo' in data:
+        invitado.puesto_completo = data.get('puesto_completo')
+    if 'institucion' in data:
+        invitado.institucion = data.get('institucion')
+    if 'abreviacion_org' in data:
+        invitado.abreviacion_org = data.get('abreviacion_org')
+    if 'es_invitado_especial' in data:
+        invitado.es_invitado_especial = bool(data.get('es_invitado_especial'))
 
     if 'es_asesor_t1' in data:
         invitado.es_asesor_t1 = bool(data.get('es_asesor_t1'))
@@ -291,15 +297,15 @@ def upload_files():
                 'error': 'Faltan archivos. Se requieren los 3 archivos (plantilla DOCX, convocatoria PDF, cronograma PDF).'
             }), 400
 
-        # Guardar archivos
+        # Guardar archivos en el directorio de assets del usuario
         template_filename = secure_filename('plantilla_base.docx')
-        template_file.save(os.path.join(ASSETS_DIR, template_filename))
+        template_file.save(ASSETS_DIR / template_filename)
         
         convocatoria_filename = secure_filename('convocatoria.pdf')
-        convocatoria_file.save(os.path.join(ASSETS_DIR, convocatoria_filename))
+        convocatoria_file.save(ASSETS_DIR / convocatoria_filename)
         
         cronograma_filename = secure_filename('cronograma.pdf')
-        cronograma_file.save(os.path.join(ASSETS_DIR, cronograma_filename))
+        cronograma_file.save(ASSETS_DIR / cronograma_filename)
             
         return jsonify({
             'success': True,
@@ -360,13 +366,10 @@ def generate_all_invitations():
     # Bucle para generar una invitación por cada invitado
     for invitado in invitados:
         invitado_dict = invitado.to_dict()
-        # Agregar campos individuales que to_dict no incluye por defecto
-        for i in range(1, 5):
-            invitado_dict[f'cargo_{i}'] = getattr(invitado, f'cargo_{i}', '')
-            invitado_dict[f'organizacion_{i}'] = getattr(invitado, f'organizacion_{i}', '')
-        
-        # Agregar abreviación para nomenclatura
-        invitado_dict['abreviacion_org_1'] = getattr(invitado, 'abreviacion_org_1', '')
+        # Los campos ya están incluidos en to_dict()
+        invitado_dict['puesto_completo'] = getattr(invitado, 'puesto_completo', '')
+        invitado_dict['institucion'] = getattr(invitado, 'institucion', '')
+        invitado_dict['abreviacion_org'] = getattr(invitado, 'abreviacion_org', '')
         
         result = generate_full_dossier(invitado_dict, context_general)
         if result["success"]:
@@ -412,9 +415,8 @@ def preview_invitation(invitado_id):
 
     # Convertir a diccionario y agregar todos los campos
     invitado_dict = invitado.to_dict()
-    for i in range(1, 5):
-        invitado_dict[f'cargo_{i}'] = getattr(invitado, f'cargo_{i}', '')
-        invitado_dict[f'organizacion_{i}'] = getattr(invitado, f'organizacion_{i}', '')
+    invitado_dict['cargo'] = getattr(invitado, 'cargo', '')
+    invitado_dict['organizacion'] = getattr(invitado, 'organizacion', '')
 
     image_path = generate_preview_image(invitado_dict, context_general)
     
@@ -437,6 +439,9 @@ if __name__ == '__main__':
             # Esta línea crea el archivo .sqlite y las tablas si no existen
             db.create_all()
             logging.info("db.create_all() ejecutado correctamente.")
+
+            # Asegurarse de que los assets por defecto estén en su lugar
+            ensure_assets_exist()
 
     except Exception as e:
         logging.error(f"!!! ERROR DURANTE LA INICIALIZACIÓN DE LA BD: {e}", exc_info=True)

@@ -121,84 +121,60 @@
                 ></textarea>
               </div>
               <div class="cargos-section">
-                <h3>💼 Cargos y Organizaciones</h3>
+                <h3>💼 Puesto e Institución</h3>
                 <p class="section-description">
-                  Agrega hasta 4 cargos con sus respectivas organizaciones
+                  Información del puesto/cargo y la institución del invitado
                 </p>
-                <div class="cargo-group">
-                  <div class="form-group">
-                    <label for="cargo_1">Cargo 1</label>
-                    <input
-                      type="text"
-                      id="cargo_1"
-                      name="cargo_1"
-                      placeholder="Ej: Director"
-                    />
-                  </div>
-                  <div class="form-group">
-                    <label for="organizacion_1">Organización 1</label>
-                    <input
-                      type="text"
-                      id="organizacion_1"
-                      name="organizacion_1"
-                      placeholder="Ej: Instituto Tecnológico de Morelia"
-                    />
-                  </div>
-                  <div class="form-group">
-                    <label for="abreviacion_org_1">Abreviación Org. 1</label>
-                    <input
-                      type="text"
-                      id="abreviacion_org_1"
-                      name="abreviacion_org_1"
-                      placeholder="Ej: ITM"
-                      maxlength="20"
-                    />
-                    <small style="color: #666; font-size: 0.85rem"
-                      >Para nomenclatura de archivos (más corto)</small
-                    >
-                  </div>
+                <div class="form-group">
+                  <label for="puesto_completo">Puesto / Cargo *</label>
+                  <input
+                    type="text"
+                    id="puesto_completo"
+                    name="puesto_completo"
+                    placeholder="Ej: Jefe del Departamento de Investigación"
+                    required
+                  />
                 </div>
-                <div class="cargo-group">
-                  <div class="form-group">
-                    <label for="cargo_2">Cargo 2</label>
-                    <input type="text" id="cargo_2" name="cargo_2" />
-                  </div>
-                  <div class="form-group">
-                    <label for="organizacion_2">Organización 2</label>
-                    <input
-                      type="text"
-                      id="organizacion_2"
-                      name="organizacion_2"
-                    />
-                  </div>
+                <div class="form-group">
+                  <label for="institucion"
+                    >Institución / Organización / Empresa *</label
+                  >
+                  <input
+                    type="text"
+                    id="institucion"
+                    name="institucion"
+                    placeholder="Ej: Instituto Tecnológico de Morelia"
+                    required
+                  />
                 </div>
-                <div class="cargo-group">
-                  <div class="form-group">
-                    <label for="cargo_3">Cargo 3</label>
-                    <input type="text" id="cargo_3" name="cargo_3" />
-                  </div>
-                  <div class="form-group">
-                    <label for="organizacion_3">Organización 3</label>
-                    <input
-                      type="text"
-                      id="organizacion_3"
-                      name="organizacion_3"
-                    />
-                  </div>
+                <div class="form-group">
+                  <label for="abreviacion_org"
+                    >Abreviación de la Institución</label
+                  >
+                  <input
+                    type="text"
+                    id="abreviacion_org"
+                    name="abreviacion_org"
+                    placeholder="Ej: ITM, UNAM, IPN"
+                    maxlength="20"
+                  />
+                  <small style="color: #666; font-size: 0.85rem"
+                    >Para nomenclatura de archivos (opcional, más corto)</small
+                  >
                 </div>
-                <div class="cargo-group">
-                  <div class="form-group">
-                    <label for="cargo_4">Cargo 4</label>
-                    <input type="text" id="cargo_4" name="cargo_4" />
-                  </div>
-                  <div class="form-group">
-                    <label for="organizacion_4">Organización 4</label>
-                    <input
-                      type="text"
-                      id="organizacion_4"
-                      name="organizacion_4"
-                    />
-                  </div>
+              </div>
+              <div class="checkboxes-group">
+                <h3>⭐ Estado del Invitado</h3>
+                <div class="checkbox-item">
+                  <input
+                    type="checkbox"
+                    id="es_invitado_especial"
+                    name="es_invitado_especial"
+                  />
+                  <label for="es_invitado_especial"
+                    >🌟 <strong>Invitado Especial</strong> (VIP, autoridad,
+                    personalidad destacada)</label
+                  >
                 </div>
               </div>
               <div class="checkboxes-group">

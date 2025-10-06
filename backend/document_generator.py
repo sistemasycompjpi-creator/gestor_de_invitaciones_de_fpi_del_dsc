@@ -15,67 +15,71 @@ from pypdf import PdfWriter
 import pythoncom  # Para inicializar COM en Windows
 
 # --- Rutas de Archivos ---
-# Los assets de lectura se encuentran en el directorio de la aplicación.
-BASE_DIR = Path(__file__).parent
-ASSETS_DIR = BASE_DIR / 'assets'
+# Directorio de assets de solo lectura (los que vienen con la aplicación)
+READ_ONLY_ASSETS_DIR = Path(__file__).parent / 'assets'
 
-# El directorio de escritura para archivos temporales se pasa como argumento.
+# El directorio de escritura para archivos temporales y assets del usuario se pasa como argumento.
 # Esto apunta a la carpeta de datos del usuario (ej. AppData en Windows).
 USER_DATA_DIR = Path(sys.argv[1])
+WRITABLE_ASSETS_DIR = USER_DATA_DIR / 'assets'
 TEMP_DIR = USER_DATA_DIR / 'temp_output'
 
-# Asegurarse de que el directorio temporal exista.
+# Asegurarse de que los directorios de escritura existan.
+WRITABLE_ASSETS_DIR.mkdir(exist_ok=True)
 TEMP_DIR.mkdir(exist_ok=True)
+
+def get_asset_path(filename):
+    """Busca un archivo primero en el directorio de assets del usuario y,
+    si no lo encuentra, busca en el directorio de assets de solo lectura."""
+    writable_path = WRITABLE_ASSETS_DIR / filename
+    if writable_path.exists():
+        return writable_path
+    return READ_ONLY_ASSETS_DIR / filename
 
 
 def _create_safe_filename(invitado_data, anio, periodo):
     """
     Función interna para crear un nombre de archivo seguro según la nomenclatura.
     Formato: {{año}}.{{periodo}}-FPiT-DOSSIER-{{Abreviación}}-{{Nombre}}
+    Si no hay abreviación: {{año}}.{{periodo}}-FPiT-DOSSIER-{{Nombre}}
     """
-    # 1. Limpiar caracteres inválidos
-    nombre_limpio = re.sub(r'[\\/*?:"<>|]', "", invitado_data.get('nombre_completo', ''))
+    # 1. Limpiar caracteres inválidos del nombre
+    nombre_limpio = re.sub(r'[\\/*?:"<>|]', "", invitado_data.get('nombre_completo', 'INVITADO'))
     
-    # 2. Usar abreviación si existe, sino usar organización completa
-    org_limpia = invitado_data.get('abreviacion_org_1') or invitado_data.get('organizacion_1') or 'INVITADO'
-    org_limpia = re.sub(r'[\\/*?:"<>|]', "", org_limpia)
+    # 2. Si hay abreviación, usarla en el nombre del archivo
+    abreviacion = invitado_data.get('abreviacion_org', '')
     
     # 3. Reemplazar espacios con guiones bajos para una mejor legibilidad
     nombre_final = nombre_limpio.replace(" ", "_")
-    org_final = org_limpia.replace(" ", "_")
     
-    # Nomenclatura: {{año}}.{{periodo}}-FPiT-DOSSIER-{{Abreviación}}-{{Nombre}}
-    return f"{anio}.{periodo}-FPiT-DOSSIER-{org_final}-{nombre_final}.pdf"
+    # 4. Crear nomenclatura con o sin abreviación
+    if abreviacion:
+        abrev_limpia = re.sub(r'[\\/*?:"<>|]', "", abreviacion).replace(" ", "_")
+        return f"{anio}.{periodo}-FPiT-DOSSIER-{abrev_limpia}-{nombre_final}.pdf"
+    else:
+        return f"{anio}.{periodo}-FPiT-DOSSIER-{nombre_final}.pdf"
 
 
 def _render_template(invitado_data, context_general):
     """
     Rellena la plantilla DOCX con datos y la guarda temporalmente.
     """
-    template_path = ASSETS_DIR / 'plantilla_base.docx'
+    template_path = get_asset_path('plantilla_base.docx')
     if not template_path.exists():
-        raise FileNotFoundError("La plantilla 'plantilla_base.docx' no ha sido cargada.")
+        raise FileNotFoundError("La plantilla 'plantilla_base.docx' no se encuentra en ninguna de las ubicaciones de assets.")
     
     doc = DocxTemplate(template_path)
     
-    # Prepara la lista de puestos
-    puestos_lista = []
-    for i in range(1, 5):
-        cargo = invitado_data.get(f'cargo_{i}')
-        organizacion = invitado_data.get(f'organizacion_{i}')
-        if cargo:
-            puestos_lista.append({
-                'cargo': cargo, 
-                'organizacion': organizacion or ''
-            })
+    # Obtener puesto e institución
+    puesto_completo = invitado_data.get('puesto_completo', '')
+    institucion = invitado_data.get('institucion', '')
 
     # Contexto completo para la plantilla
     context = {
         'nombre_completo': invitado_data.get('nombre_completo', ''),
-        'cargo_1': invitado_data.get('cargo_1', ''),
-        'organizacion_1': invitado_data.get('organizacion_1', ''),
+        'puesto_completo': puesto_completo,
+        'institucion': institucion,
         'caracter_invitacion': invitado_data.get('caracter_invitacion', ''),
-        'puestos': puestos_lista,
         **context_general  # Añade todos los datos generales del evento
     }
     
@@ -110,11 +114,11 @@ def generate_full_dossier(invitado_data, context_general):
         
         # 3. Unir los 3 PDFs (carta + convocatoria + cronograma)
         merger = PdfWriter()
-        convocatoria_path = ASSETS_DIR / 'convocatoria.pdf'
-        cronograma_path = ASSETS_DIR / 'cronograma.pdf'
+        convocatoria_path = get_asset_path('convocatoria.pdf')
+        cronograma_path = get_asset_path('cronograma.pdf')
 
         if not all([convocatoria_path.exists(), cronograma_path.exists()]):
-            raise FileNotFoundError("Faltan los archivos PDF de convocatoria y/o cronograma.")
+            raise FileNotFoundError("Faltan los archivos PDF de convocatoria y/o cronograma en las ubicaciones de assets.")
 
         merger.append(str(temp_pdf_path))
         merger.append(str(convocatoria_path))

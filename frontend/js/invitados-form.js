@@ -156,15 +156,14 @@ function cargarParaEdicion(invitado) {
   // Nota del invitado
   form.querySelector("#nota").value = invitado.nota || "";
 
-  // Cargos y organizaciones
-  if (invitado.puestos && invitado.puestos.length > 0) {
-    invitado.puestos.forEach((puesto, index) => {
-      const cargoInput = form.querySelector(`#cargo_${index + 1}`);
-      const orgInput = form.querySelector(`#organizacion_${index + 1}`);
-      if (cargoInput) cargoInput.value = puesto.cargo || "";
-      if (orgInput) orgInput.value = puesto.organizacion || "";
-    });
-  }
+  // Puesto e institución
+  form.querySelector("#puesto_completo").value = invitado.puesto_completo || "";
+  form.querySelector("#institucion").value = invitado.institucion || "";
+  form.querySelector("#abreviacion_org").value = invitado.abreviacion_org || "";
+
+  // Checkbox de invitado especial
+  form.querySelector("#es_invitado_especial").checked =
+    invitado.es_invitado_especial || false;
 
   // Checkboxes de asesoría
   form.querySelector("#es_asesor_t1").checked = invitado.es_asesor_t1 || false;

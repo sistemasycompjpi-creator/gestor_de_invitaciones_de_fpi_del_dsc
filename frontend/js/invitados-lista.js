@@ -107,19 +107,30 @@ function crearCardInvitado(invitado) {
     rolesHTML += '<span class="badge badge-informe">📄 Jurado Informe</span>';
   }
 
-  // Cargos y organizaciones
-  let puestosHTML = "";
-  if (invitado.puestos && invitado.puestos.length > 0) {
-    invitado.puestos.forEach((puesto) => {
-      if (puesto.cargo && puesto.organizacion) {
-        puestosHTML += `
-          <div class="puesto-line">
-            <span class="cargo-badge">${puesto.cargo}</span>
-            <span class="organizacion">${puesto.organizacion}</span>
-          </div>
-        `;
-      }
-    });
+  // Puesto e institución
+  let puestoHTML = "";
+  if (invitado.puesto_completo || invitado.institucion) {
+    puestoHTML = `
+      <div class="puesto-institucion">
+        ${
+          invitado.puesto_completo
+            ? `<div class="puesto">${invitado.puesto_completo}</div>`
+            : ""
+        }
+        ${
+          invitado.institucion
+            ? `<div class="institucion">${invitado.institucion}</div>`
+            : ""
+        }
+      </div>
+    `;
+  }
+
+  // Badge de Invitado Especial
+  let especialHTML = "";
+  if (invitado.es_invitado_especial) {
+    especialHTML =
+      '<span class="badge badge-especial">🌟 Invitado Especial</span>';
   }
 
   // Nota opcional
@@ -134,6 +145,7 @@ function crearCardInvitado(invitado) {
         <div class="card-line-1-left">
           <h3 class="nombre">${invitado.nombre_completo}</h3>
           <div class="roles">
+            ${especialHTML}
             ${
               rolesHTML ||
               '<span class="badge badge-default">Sin roles asignados</span>'
@@ -142,7 +154,7 @@ function crearCardInvitado(invitado) {
         </div>
         <span class="id-badge">ID: ${invitado.id}</span>
       </div>
-      ${puestosHTML}
+      ${puestoHTML}
       <div class="caracter-line">
         <div class="caracter-invitacion">${
           invitado.caracter_invitacion || "Sin especificar"

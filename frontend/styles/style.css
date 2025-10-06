@@ -516,6 +516,32 @@ form {
   color: var(--text-secondary);
 }
 
+.puesto-line .puesto-completo {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.puesto-institucion {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 0;
+}
+
+.puesto-institucion .puesto {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.puesto-institucion .institucion {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
 /* Línea de carácter de invitación */
 .caracter-line {
   display: flex;
@@ -615,6 +641,14 @@ form {
   background-color: #FEF3C7;
   color: #92400E;
   border: 1px solid #FDE68A;
+}
+
+.badge-especial {
+  background: linear-gradient(135deg, #FFF9E6 0%, #FFE8A3 100%);
+  color: #D97706;
+  border: 2px solid #F59E0B;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
 }
 
 .badge-default {
