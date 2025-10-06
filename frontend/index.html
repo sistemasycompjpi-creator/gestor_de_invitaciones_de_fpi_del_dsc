@@ -618,12 +618,14 @@
               </p>
               
               <div class="form-group">
-                <label>Paso 1: Descarga la plantilla para asegurar el formato correcto.</label>
-                <button class="btn btn-secondary" id="btn-generar-plantilla">📄 Descargar Plantilla Excel</button>
+                <label>Paso 1: Descarga la plantilla mejorada.</label>
+                <p class="section-hint" style="margin-bottom: 10px;">El archivo Excel contiene una hoja de "Instrucciones" que explica cada columna.</p>
+                <button class="btn btn-secondary" id="btn-generar-plantilla">📄 Descargar Plantilla con Instrucciones</button>
               </div>
 
               <div class="form-group">
                 <label for="input-file-import">Paso 2: Selecciona el archivo a importar.</label>
+                 <p class="section-hint" style="margin-bottom: 10px;">Asegúrate de que los campos de tipo "Sí/No" (como "Es Invitado Especial") usen <strong>1 para Sí</strong> y <strong>0 para No</strong>.</p>
                 <input type="file" id="input-file-import" accept=".xlsx, .xls, .csv" />
               </div>
 
@@ -638,7 +640,7 @@
             <section class="panel-section">
               <h3>📤 Exportar Invitados</h3>
               <p class="section-hint">
-                Descarga la lista completa de invitados registrados en el formato que prefieras.
+                Descarga la lista completa de invitados registrados. Los campos booleanos se exportarán como 1 (Sí) y 0 (No).
               </p>
               <div class="form-actions-export">
                 <button class="btn btn-success" id="btn-exportar-excel">📗 Exportar a Excel</button>

@@ -427,44 +427,66 @@ def preview_invitation(invitado_id):
         return jsonify({'error': 'No se pudo generar la vista previa'}), 500
 
 
-import pandas as pd
-import io
-
 ### Rutas para Importación y Exportación ###
 
-# Definir las columnas para la plantilla y la importación/exportación
-# Deben coincidir con los campos del modelo, excluyendo 'id'
-TEMPLATE_COLUMNS = [
-    'nombre_completo',
-    'caracter_invitacion',
-    'nota',
-    'puesto_completo',
-    'institucion',
-    'abreviacion_org',
-    'es_invitado_especial',
-    'es_asesor_t1',
-    'es_asesor_t2'
-]
+# Mapeo de nombres de columna internos a cabeceras amigables para el usuario
+USER_FRIENDLY_HEADERS = {
+    'nombre_completo': 'Nombre Completo',
+    'caracter_invitacion': 'Carácter de la Invitación',
+    'nota': 'Nota (Opcional)',
+    'puesto_completo': 'Puesto o Cargo',
+    'institucion': 'Institución / Empresa',
+    'abreviacion_org': 'Abreviación de Institución (para archivos)',
+    'es_invitado_especial': 'Es Invitado Especial (1=Sí, 0=No)',
+    'es_asesor_t1': 'Es Asesor T1 (1=Sí, 0=No)',
+    'es_asesor_t2': 'Es Asesor T2 (1=Sí, 0=No)',
+    'puede_ser_jurado_protocolo': 'Puede ser Jurado de Protocolo (Automático)',
+    'puede_ser_jurado_informe': 'Puede ser Jurado de Informe (Automático)'
+}
+
+# Mapeo inverso para la importación (de amigable a interno)
+INTERNAL_HEADERS = {v.lower(): k for k, v in USER_FRIENDLY_HEADERS.items()}
+
 
 @app.route('/api/invitados/plantilla', methods=['GET'])
 def descargar_plantilla():
-    """Genera y sirve una plantilla de Excel vacía para la importación de invitados."""
+    """Genera y sirve una plantilla de Excel con instrucciones para la importación."""
     try:
-        df = pd.DataFrame(columns=TEMPLATE_COLUMNS)
-        
-        # Crear un buffer de bytes en memoria para el archivo Excel
+        # Hoja 1: La plantilla a llenar
+        template_df = pd.DataFrame(columns=[h for h, k in USER_FRIENDLY_HEADERS.items() if 'Automático' not in h])
+
+        # Hoja 2: Las instrucciones
+        instructions_data = {
+            'Campo': list(USER_FRIENDLY_HEADERS.values()),
+            'Descripción': [
+                'Nombre completo del invitado, incluyendo título (Ej: Dr. Juan Pérez García). Requerido.',
+                'Motivo de la invitación (Ej: Jurado en evento académico, Ponente magistral). Requerido.',
+                'Cualquier nota o comentario relevante sobre el invitado.',
+                'Puesto completo del invitado (Ej: Jefe del Departamento de Investigación).',
+                'Nombre completo de la institución, organización o empresa a la que pertenece.',
+                'Abreviación corta para la nomenclatura de archivos (Ej: ITM, UNAM, UMSNH).',
+                'Marcar con 1 si el invitado es una autoridad o VIP. Dejar en 0 o vacío si no.',
+                'Marcar con 1 si el invitado es Asesor de Taller de Investigación 1. Dejar en 0 o vacío si no.',
+                'Marcar con 1 si el invitado es Asesor de Taller de Investigación 2. Dejar en 0 o vacío si no.',
+                'Este campo se calcula automáticamente. No es necesario llenarlo.',
+                'Este campo se calcula automáticamente. No es necesario llenarlo.'
+            ]
+        }
+        instructions_df = pd.DataFrame(instructions_data)
+
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Invitados')
+            template_df.to_excel(writer, index=False, sheet_name='Plantilla de Invitados')
+            instructions_df.to_excel(writer, index=False, sheet_name='Instrucciones')
         output.seek(0)
         
-        logging.info("Se ha generado y enviado la plantilla de Excel para invitados.")
+        logging.info("Se ha generado y enviado la plantilla de Excel mejorada para invitados.")
         
         return send_file(
             output,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             as_attachment=True,
-            download_name='plantilla_invitados.xlsx'
+            download_name='plantilla_invitados_con_instrucciones.xlsx'
         )
     except Exception as e:
         logging.error(f"Error al generar la plantilla de Excel: {e}", exc_info=True)
@@ -473,7 +495,7 @@ def descargar_plantilla():
 
 @app.route('/api/invitados/exportar', methods=['GET'])
 def exportar_invitados():
-    """Exporta todos los invitados a un archivo Excel o CSV."""
+    """Exporta todos los invitados a un archivo Excel o CSV con cabeceras amigables."""
     formato = request.args.get('formato', 'excel').lower()
     
     try:
@@ -481,24 +503,29 @@ def exportar_invitados():
         if not invitados:
             return jsonify({'error': 'No hay invitados para exportar'}), 404
 
-        # Convertir lista de objetos a diccionarios y luego a DataFrame
         datos_invitados = [invitado.to_dict() for invitado in invitados]
         df = pd.DataFrame(datos_invitados)
+
+        # Convertir booleanos a 1/0 para mayor claridad en el archivo exportado
+        for col in ['es_invitado_especial', 'es_asesor_t1', 'es_asesor_t2', 'puede_ser_jurado_protocolo', 'puede_ser_jurado_informe']:
+            if col in df.columns:
+                df[col] = df[col].astype(int)
+
+        # Renombrar columnas a formato amigable
+        df.rename(columns=USER_FRIENDLY_HEADERS, inplace=True)
         
-        # Usar las columnas definidas para asegurar el orden y la consistencia
-        # El método to_dict() ya incluye los campos computados de jurado
-        export_columns = TEMPLATE_COLUMNS + ['puede_ser_jurado_protocolo', 'puede_ser_jurado_informe']
-        df = df[export_columns]
+        # Asegurar el orden de las columnas en la exportación
+        ordered_columns = [h for h in USER_FRIENDLY_HEADERS.values() if h in df.columns]
+        df = df[ordered_columns]
 
         output = io.BytesIO()
         
         if formato == 'excel':
-            with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False, sheet_name='Invitados')
+            df.to_excel(output, index=False, sheet_name='Invitados Exportados')
             mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             filename = 'exportacion_invitados.xlsx'
         elif formato == 'csv':
-            df.to_csv(output, index=False, encoding='utf-8')
+            df.to_csv(output, index=False, encoding='utf-8-sig') # utf-8-sig para mejor compatibilidad con Excel
             mimetype = 'text/csv'
             filename = 'exportacion_invitados.csv'
         else:
@@ -507,12 +534,7 @@ def exportar_invitados():
         output.seek(0)
         logging.info(f"Se han exportado {len(invitados)} invitados a formato {formato}.")
 
-        return send_file(
-            output,
-            mimetype=mimetype,
-            as_attachment=True,
-            download_name=filename
-        )
+        return send_file(output, mimetype=mimetype, as_attachment=True, download_name=filename)
 
     except Exception as e:
         logging.error(f"Error al exportar invitados: {e}", exc_info=True)
@@ -521,7 +543,7 @@ def exportar_invitados():
 
 @app.route('/api/invitados/importar', methods=['POST'])
 def importar_invitados():
-    """Importa invitados desde un archivo Excel o CSV."""
+    """Importa invitados desde un archivo Excel o CSV usando cabeceras amigables."""
     if 'file' not in request.files:
         return jsonify({'error': 'No se encontró ningún archivo en la solicitud'}), 400
 
@@ -538,20 +560,18 @@ def importar_invitados():
         else:
             return jsonify({'error': 'Formato de archivo no soportado. Use .xlsx, .xls o .csv'}), 400
 
-        # Limpiar nombres de columnas (quitar espacios, a minúsculas)
-        df.columns = df.columns.str.strip().str.lower()
+        # Normalizar cabeceras del archivo (a minúsculas, sin espacios extra)
+        df.rename(columns={col: col.strip().lower() for col in df.columns}, inplace=True)
+        # Mapear cabeceras amigables a nombres de columna internos
+        df.rename(columns=INTERNAL_HEADERS, inplace=True)
 
-        # Función para convertir valores a booleano de forma flexible
         def to_bool(value):
             if pd.isna(value):
                 return False
-            if isinstance(value, bool):
-                return value
-            return str(value).lower() in ['true', '1', 't', 'y', 'yes', 'si', 'verdadero']
+            return str(value).lower() in ['1', 'true', 't', 'y', 'yes', 'si', 'verdadero']
 
         nuevos_invitados = []
         for index, row in df.iterrows():
-            # Validar que los campos requeridos no estén vacíos
             if pd.isna(row.get('nombre_completo')) or pd.isna(row.get('caracter_invitacion')):
                 logging.warning(f"Omitiendo fila {index+2} por falta de datos requeridos.")
                 continue
@@ -567,7 +587,7 @@ def importar_invitados():
                 es_asesor_t1=to_bool(row.get('es_asesor_t1')),
                 es_asesor_t2=to_bool(row.get('es_asesor_t2')),
             )
-            invitado.compute_jurado_flags() # Calcular flags de jurado
+            invitado.compute_jurado_flags()
             nuevos_invitados.append(invitado)
 
         if nuevos_invitados:
