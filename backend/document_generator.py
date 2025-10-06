@@ -90,7 +90,7 @@ def _render_template(invitado_data, context_general):
     return filled_docx_path
 
 
-def generate_full_dossier(invitado_data, context_general):
+def generate_full_dossier(invitado_data, context_general, output_dir):
     """
     Genera el dossier completo en PDF para un invitado y lo guarda en el Escritorio.
     
@@ -124,10 +124,8 @@ def generate_full_dossier(invitado_data, context_general):
         merger.append(str(convocatoria_path))
         merger.append(str(cronograma_path))
         
-        # 4. Guardar en el Escritorio
-        desktop_path = Path.home() / 'Desktop'
-        output_folder = f"{context_general['anio']}.{context_general['periodo']}-invitaciones"
-        final_dir = desktop_path / output_folder
+        # 4. Guardar en la carpeta de salida especificada
+        final_dir = Path(output_dir)
         final_dir.mkdir(exist_ok=True)
         
         filename = _create_safe_filename(

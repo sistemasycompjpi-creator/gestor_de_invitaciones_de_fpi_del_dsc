@@ -358,13 +358,13 @@ def generate_all_invitations():
     generated_count = 0
     errors_list = []
     
-    # Crear carpeta de salida
-    output_folder = os.path.join(
-        os.path.expanduser('~'),
-        'Desktop',
-        f"{context_general['anio']}.{context_general['periodo']}-invitaciones"
-    )
-    
+    output_dir = data.get("output_dir")
+    if not output_dir:
+        return jsonify({
+            'success': False,
+            'error': 'No se ha especificado un directorio de salida'
+        }), 400
+
     # Bucle para generar una invitación por cada invitado
     for invitado in invitados:
         invitado_dict = invitado.to_dict()
@@ -373,7 +373,7 @@ def generate_all_invitations():
         invitado_dict['institucion'] = getattr(invitado, 'institucion', '')
         invitado_dict['abreviacion_org'] = getattr(invitado, 'abreviacion_org', '')
         
-        result = generate_full_dossier(invitado_dict, context_general)
+        result = generate_full_dossier(invitado_dict, context_general, output_dir)
         if result["success"]:
             generated_count += 1
         else:
@@ -387,7 +387,7 @@ def generate_all_invitations():
         'generated_count': generated_count,
         'count': generated_count,
         'total': len(invitados),
-        'output_folder': output_folder,
+        'output_folder': output_dir,
         'errors': errors_list,
         'message': f"Se generaron {generated_count} de {len(invitados)} invitaciones correctamente"
     }), 200
@@ -411,29 +411,26 @@ def generate_single_invitation(invitado_id):
     if not all(context_general.values()):
         return jsonify({'success': False, 'error': 'Faltan datos del evento'}), 400
 
+    output_dir = data.get("output_dir")
+    if not output_dir:
+        return jsonify({'success': False, 'error': 'No se ha especificado un directorio de salida'}), 400
+
     invitado = Invitado.query.get(invitado_id)
     if not invitado:
         return jsonify({'success': False, 'error': 'Invitado no encontrado'}), 404
         
-    # Crear carpeta de salida (igual que en la generación masiva)
-    output_folder = os.path.join(
-        os.path.expanduser('~'),
-        'Desktop',
-        f"{context_general['anio']}.{context_general['periodo']}-invitaciones"
-    )
-    
     invitado_dict = invitado.to_dict()
     invitado_dict['puesto_completo'] = getattr(invitado, 'puesto_completo', '')
     invitado_dict['institucion'] = getattr(invitado, 'institucion', '')
     invitado_dict['abreviacion_org'] = getattr(invitado, 'abreviacion_org', '')
     
-    result = generate_full_dossier(invitado_dict, context_general)
+    result = generate_full_dossier(invitado_dict, context_general, output_dir)
     
     if result["success"]:
         return jsonify({
             'success': True,
             'message': f"Se generó la invitación para {invitado.nombre_completo} correctamente.",
-            'output_folder': output_folder,
+            'output_folder': output_dir,
             'file_path': result.get('file_path')
         }), 200
     else:

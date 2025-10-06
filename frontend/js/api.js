@@ -163,6 +163,19 @@ async function generateSingleInvitation(id, data) {
   return await response.json();
 }
 
+/**
+ * Opens a dialog to select a directory.
+ * @returns {Promise<string|null>} - The selected directory path or null if canceled.
+ */
+async function selectDirectory() {
+  if (window.electronAPI && window.electronAPI.selectDirectory) {
+    return await window.electronAPI.selectDirectory();
+  }
+  // Fallback for non-Electron environments
+  console.warn("La selección de directorios solo está disponible en la aplicación de escritorio.");
+  return null;
+}
+
 // Exportar para uso global
 window.API = {
   obtenerInvitados,
@@ -171,5 +184,6 @@ window.API = {
   eliminarInvitado,
   generarInvitaciones,
   generateSingleInvitation, // <-- Añadido
+  selectDirectory, // <-- Añadido
   CONFIG: API_CONFIG,
 };

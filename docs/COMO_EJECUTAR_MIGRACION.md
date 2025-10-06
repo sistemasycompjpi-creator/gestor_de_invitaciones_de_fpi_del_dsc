@@ -43,9 +43,7 @@ es_invitado_especial (nuevo campo)
 1. Abrir **Símbolo del sistema (CMD)**
 2. Navegar a la carpeta:
 
-```cmd
-cd C:\Users\DarkK\Desktop\Invitaciones\backend
-```
+cd /ruta/a/tu/proyecto/backend
 
 ---
 
@@ -85,7 +83,7 @@ El script te preguntará:
 ⚠️  ADVERTENCIA:
    Este script modificará la estructura de la base de datos.
    Se creará un backup automático antes de proceder.
-   Base de datos: C:\Users\DarkK\Desktop\Invitaciones\backend\db.sqlite
+   Base de datos: /ruta/a/tu/proyecto/backend/db.sqlite
 
 ¿Deseas continuar con la migración? (s/n):
 ```
@@ -189,7 +187,7 @@ Si ves errores de SQLAlchemy, detén el servidor (Ctrl+C) y vuelve a ejecutar el
 En otra terminal (en la carpeta raíz):
 
 ```cmd
-cd C:\Users\DarkK\Desktop\Invitaciones
+cd /ruta/a/tu/proyecto
 npm start
 ```
 
@@ -255,7 +253,7 @@ Si los puestos no se ven bien, puedes editarlos manualmente:
 **Solución:** Asegúrate de estar en la carpeta `backend`:
 
 ```cmd
-cd C:\Users\DarkK\Desktop\Invitaciones\backend
+cd /ruta/a/tu/proyecto/backend
 dir
 ```
 

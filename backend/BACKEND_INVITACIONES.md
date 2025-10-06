@@ -118,7 +118,7 @@ El frontend envía un `FormData` con los siguientes campos:
 ## Ejemplo de estructura de carpeta resultante
 
 ```
-C:/Users/DarkK/Desktop/2025.1-invitaciones/
+/ruta/de/salida/2025.1-invitaciones/
 ├── 2025.1-FPiT-DOSSIER-ABV-Eloy Hernández Hurtado.pdf
 ├── 2025.1-FPiT-DOSSIER-ITM-Dra. María López.pdf
 ├── 2025.1-FPiT-DOSSIER-UNAM-Mtro. Carlos Ruiz.pdf
@@ -130,7 +130,7 @@ C:/Users/DarkK/Desktop/2025.1-invitaciones/
 ```json
 {
   "success": true,
-  "folder_path": "C:/Users/DarkK/Desktop/2025.1-invitaciones",
+  "folder_path": "/ruta/de/salida/2025.1-invitaciones",
   "archivos_generados": [
     "2025.1-FPiT-DOSSIER-ABV-Eloy Hernández Hurtado.pdf",
     "2025.1-FPiT-DOSSIER-ITM-Dra. María López.pdf"

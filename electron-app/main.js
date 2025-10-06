@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, shell, ipcMain } = require("electron");
+const { app, BrowserWindow, Menu, shell, ipcMain, dialog } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -141,6 +141,16 @@ ${error.message}`;
     }
   });
 
+  ipcMain.handle("select-dir", async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      properties: ["openDirectory"],
+    });
+    if (canceled) {
+      return null;
+    }
+    return filePaths[0];
+  });
+
   // Construir y establecer el menú
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);
@@ -160,7 +170,6 @@ ${error.message}`;
     backendScript = path.join(process.resourcesPath, "backend/main.py");
   } else {
     // DESARROLLO: npm start o electron .
-    console.log("🔧 Ejecutando en modo DESARROLLO");
     pythonExecutable = path.join(
       __dirname,
       "../backend/venv/Scripts/python.exe"

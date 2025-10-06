@@ -10,6 +10,7 @@ let invitacionesState = {
   },
   archivosSubidos: false,
   generationMode: 'todos', // 'todos' o 'individual'
+  outputDir: null,
 };
 
 /**
@@ -21,6 +22,7 @@ function inicializarInvitaciones() {
   configurarPeriodo();
   configurarModoGeneracion();
   cargarInvitadosParaSelector();
+  configurarSeleccionDirectorio();
 }
 
 /**
@@ -190,6 +192,25 @@ function configurarPeriodo() {
 }
 
 /**
+ * Configura el botón para seleccionar el directorio de salida
+ */
+function configurarSeleccionDirectorio() {
+  const btnSelectDir = document.getElementById("btn-select-output-dir");
+  if (btnSelectDir) {
+    btnSelectDir.addEventListener("click", async () => {
+      const selectedDir = await window.API.selectDirectory();
+      if (selectedDir) {
+        invitacionesState.outputDir = selectedDir;
+        const outputPathEl = document.getElementById("output-path");
+        if (outputPathEl) {
+          outputPathEl.textContent = selectedDir;
+        }
+      }
+    });
+  }
+}
+
+/**
  * Configura el botón de generación
  */
 function configurarGeneracion() {
@@ -232,7 +253,12 @@ async function generarInvitaciones() {
     edicion_evento: document.getElementById("edicion-evento").value,
     fecha_evento: document.getElementById("fecha-evento").value,
     fecha_carta: document.getElementById("fecha-carta").value,
+    output_dir: invitacionesState.outputDir,
   };
+
+  if (!invitacionesState.outputDir) {
+    return window.UI.mostrarModal("⚠️ Directorio no seleccionado", "Por favor selecciona una carpeta de destino para las invitaciones.", "⚠️");
+  }
 
   if (!eventData.anio || !eventData.periodo || !eventData.edicion_evento || !eventData.fecha_evento || !eventData.fecha_carta) {
     return window.UI.mostrarModal("⚠️ Campos Incompletos", "Por favor completa todos los campos de configuración del evento.", "⚠️");
