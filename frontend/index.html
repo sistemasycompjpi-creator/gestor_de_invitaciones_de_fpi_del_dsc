@@ -667,6 +667,56 @@
       </div>
     </div>
 
+    <!-- Modal para Generación Individual -->
+    <div class="modal-overlay" id="modal-single-generation-overlay">
+      <div class="modal large">
+        <h3 class="modal-title" id="modal-single-generation-title">Generar Invitación Individual</h3>
+        <p>Se generará la invitación para: <strong id="modal-single-guest-name"></strong></p>
+        
+        <form id="form-single-generation">
+            <!-- Los campos son similares a los de la página de generación masiva -->
+            <div class="panel-section">
+              <h4>📅 Configuración del Periodo</h4>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="single-periodo-anio">Año *</label>
+                  <input type="number" id="single-periodo-anio" placeholder="2025" min="2020" max="2050" required />
+                </div>
+                <div class="form-group">
+                  <label for="single-periodo-numero">Periodo *</label>
+                  <select id="single-periodo-numero" required>
+                    <option value="">Seleccionar...</option>
+                    <option value="1">1 (Enero - Junio)</option>
+                    <option value="3">3 (Agosto - Diciembre)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-section">
+              <h4>ℹ️ Información del Evento</h4>
+              <div class="form-group">
+                <label for="single-edicion-evento">Mes y Año del Evento *</label>
+                <input type="text" id="single-edicion-evento" placeholder="Ej: noviembre 2025" required />
+              </div>
+              <div class="form-group">
+                <label for="single-fecha-evento">Fecha del Evento *</label>
+                <input type="text" id="single-fecha-evento" placeholder="Ej: 13 de junio de 2025" required />
+              </div>
+              <div class="form-group">
+                <label for="single-fecha-carta">Fecha de la Carta *</label>
+                <input type="date" id="single-fecha-carta" required />
+              </div>
+            </div>
+        </form>
+
+        <div class="modal-footer">
+          <button class="modal-btn modal-btn-secondary" id="modal-btn-single-cancel">Cancelar</button>
+          <button class="modal-btn modal-btn-primary" id="modal-btn-single-generate">🚀 Generar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Scripts modulares - orden de carga importante -->
     <script src="./js/api.js"></script>
     <script src="./js/ui.js"></script>

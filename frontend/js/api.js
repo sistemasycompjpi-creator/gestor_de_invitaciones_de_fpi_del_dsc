@@ -137,6 +137,32 @@ async function generarInvitaciones(formData) {
   return await response.json();
 }
 
+/**
+ * Genera la invitación para un solo invitado.
+ * @param {number} id - ID del invitado.
+ * @param {Object} data - Datos del evento para la generación.
+ * @returns {Promise<Object>} - Resultado de la generación.
+ */
+async function generateSingleInvitation(id, data) {
+  const response = await fetch(
+    `${API_CONFIG.BASE_URL}/api/generate-single-invitation/${id}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  }
+
+  return await response.json();
+}
+
 // Exportar para uso global
 window.API = {
   obtenerInvitados,
@@ -144,5 +170,6 @@ window.API = {
   actualizarInvitado,
   eliminarInvitado,
   generarInvitaciones,
+  generateSingleInvitation, // <-- Añadido
   CONFIG: API_CONFIG,
 };

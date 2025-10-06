@@ -1,3 +1,5 @@
+import pandas as pd
+import io
 import os
 import sys
 from pathlib import Path
@@ -391,6 +393,57 @@ def generate_all_invitations():
     }), 200
 
 
+@app.route('/api/generate-single-invitation/<int:invitado_id>', methods=['POST'])
+def generate_single_invitation(invitado_id):
+    """Genera la invitación para un solo invitado específico."""
+    data = request.get_json()
+    
+    context_general = {
+        "anio": data.get("anio"),
+        "periodo": data.get("periodo"),
+        "edicion_evento": data.get("edicion_evento"),
+        "fecha_evento": data.get("fecha_evento"),
+        "fecha_carta": format_fecha_carta(data.get("fecha_carta")),
+        "nombre_firmante": "Claudio Ernesto Florián Arenas",
+        "cargo_firmante": "Jefe del Departamento de Ingeniería en Sistemas y Computación"
+    }
+    
+    if not all(context_general.values()):
+        return jsonify({'success': False, 'error': 'Faltan datos del evento'}), 400
+
+    invitado = Invitado.query.get(invitado_id)
+    if not invitado:
+        return jsonify({'success': False, 'error': 'Invitado no encontrado'}), 404
+        
+    # Crear carpeta de salida (igual que en la generación masiva)
+    output_folder = os.path.join(
+        os.path.expanduser('~'),
+        'Desktop',
+        f"{context_general['anio']}.{context_general['periodo']}-invitaciones"
+    )
+    
+    invitado_dict = invitado.to_dict()
+    invitado_dict['puesto_completo'] = getattr(invitado, 'puesto_completo', '')
+    invitado_dict['institucion'] = getattr(invitado, 'institucion', '')
+    invitado_dict['abreviacion_org'] = getattr(invitado, 'abreviacion_org', '')
+    
+    result = generate_full_dossier(invitado_dict, context_general)
+    
+    if result["success"]:
+        return jsonify({
+            'success': True,
+            'message': f"Se generó la invitación para {invitado.nombre_completo} correctamente.",
+            'output_folder': output_folder,
+            'file_path': result.get('file_path')
+        }), 200
+    else:
+        return jsonify({
+            'success': False,
+            'error': result['error'],
+            'invitado': invitado.nombre_completo
+        }), 500
+
+
 @app.route('/api/preview-invitation/<int:invitado_id>', methods=['POST'])
 def preview_invitation(invitado_id):
     """Genera una imagen de vista previa para un invitado específico."""
@@ -431,17 +484,17 @@ def preview_invitation(invitado_id):
 
 # Mapeo de nombres de columna internos a cabeceras amigables para el usuario
 USER_FRIENDLY_HEADERS = {
-    'nombre_completo': 'Nombre Completo',
+    'nombre_completo': 'Nombre Completo del Invitado',
     'caracter_invitacion': 'Carácter de la Invitación',
-    'nota': 'Nota (Opcional)',
-    'puesto_completo': 'Puesto o Cargo',
-    'institucion': 'Institución / Empresa',
-    'abreviacion_org': 'Abreviación de Institución (para archivos)',
-    'es_invitado_especial': 'Es Invitado Especial (1=Sí, 0=No)',
-    'es_asesor_t1': 'Es Asesor T1 (1=Sí, 0=No)',
-    'es_asesor_t2': 'Es Asesor T2 (1=Sí, 0=No)',
-    'puede_ser_jurado_protocolo': 'Puede ser Jurado de Protocolo (Automático)',
-    'puede_ser_jurado_informe': 'Puede ser Jurado de Informe (Automático)'
+    'nota': 'Nota Adicional (Opcional)',
+    'puesto_completo': 'Puesto o Cargo Completo',
+    'institucion': 'Institución / Organización',
+    'abreviacion_org': 'Abreviación de Institución',
+    'es_invitado_especial': '¿Es Invitado Especial? (1=Sí, 0=No)',
+    'es_asesor_t1': '¿Es Asesor de Taller 1? (1=Sí, 0=No)',
+    'es_asesor_t2': '¿Es Asesor de Taller 2? (1=Sí, 0=No)',
+    'puede_ser_jurado_protocolo': 'Jurado de Protocolo (Automático)',
+    'puede_ser_jurado_informe': 'Jurado de Informe (Automático)'
 }
 
 # Mapeo inverso para la importación (de amigable a interno)
@@ -453,7 +506,7 @@ def descargar_plantilla():
     """Genera y sirve una plantilla de Excel con instrucciones para la importación."""
     try:
         # Hoja 1: La plantilla a llenar
-        template_df = pd.DataFrame(columns=[h for h, k in USER_FRIENDLY_HEADERS.items() if 'Automático' not in h])
+        template_df = pd.DataFrame(columns=[h for h in USER_FRIENDLY_HEADERS.values() if 'Automático' not in h])
 
         # Hoja 2: Las instrucciones
         instructions_data = {
@@ -468,8 +521,8 @@ def descargar_plantilla():
                 'Marcar con 1 si el invitado es una autoridad o VIP. Dejar en 0 o vacío si no.',
                 'Marcar con 1 si el invitado es Asesor de Taller de Investigación 1. Dejar en 0 o vacío si no.',
                 'Marcar con 1 si el invitado es Asesor de Taller de Investigación 2. Dejar en 0 o vacío si no.',
-                'Este campo se calcula automáticamente. No es necesario llenarlo.',
-                'Este campo se calcula automáticamente. No es necesario llenarlo.'
+                'Este campo se calcula automáticamente al guardar. No es necesario llenarlo.',
+                'Este campo se calcula automáticamente al guardar. No es necesario llenarlo.'
             ]
         }
         instructions_df = pd.DataFrame(instructions_data)
