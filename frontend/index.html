@@ -141,8 +141,21 @@
                       type="text"
                       id="organizacion_1"
                       name="organizacion_1"
-                      placeholder="Ej: Instituto Tecnológico"
+                      placeholder="Ej: Instituto Tecnológico de Morelia"
                     />
+                  </div>
+                  <div class="form-group">
+                    <label for="abreviacion_org_1">Abreviación Org. 1</label>
+                    <input
+                      type="text"
+                      id="abreviacion_org_1"
+                      name="abreviacion_org_1"
+                      placeholder="Ej: ITM"
+                      maxlength="20"
+                    />
+                    <small style="color: #666; font-size: 0.85rem"
+                      >Para nomenclatura de archivos (más corto)</small
+                    >
                   </div>
                 </div>
                 <div class="cargo-group">
@@ -232,23 +245,23 @@
               <!-- Panel Izquierdo: Configuración -->
               <div class="invitaciones-panel-left">
                 <div class="panel-section">
-                  <h3>📁 Archivos Externos Requeridos</h3>
-                  <p class="section-description">
-                    Importa los 3 archivos PDF necesarios para generar las
-                    invitaciones
+                  <h3>📁 Paso 1: Archivos Base</h3>
+                  <p class="section-hint">
+                    💡 Estos archivos se cargan una vez y se reutilizan para
+                    todas las invitaciones. Verás ✅ cuando se carguen
+                    correctamente.
                   </p>
-
                   <div class="file-upload-group">
-                    <label for="file-plantilla-doc">
+                    <label for="file-plantilla-docx">
                       <span class="file-label"
-                        >📄 Plantilla Base (PDF con formato de carta)</span
+                        >📄 Plantilla Base (DOCX con variables)</span
                       >
                       <input
                         type="file"
-                        id="file-plantilla-doc"
-                        accept=".pdf"
+                        id="file-plantilla-docx"
+                        accept=".docx"
                       />
-                      <span class="file-status" id="status-plantilla-doc"
+                      <span class="file-status" id="status-plantilla-docx"
                         >Sin seleccionar</span
                       >
                     </label>
@@ -275,10 +288,22 @@
                       >
                     </label>
                   </div>
+
+                  <button
+                    class="btn btn-secondary btn-large"
+                    id="btn-cargar-archivos"
+                    style="margin-top: 15px; width: 100%"
+                  >
+                    ⬆️ Cargar Archivos al Servidor
+                  </button>
                 </div>
 
                 <div class="panel-section">
-                  <h3>📅 Configuración del Periodo</h3>
+                  <h3>📅 Paso 2: Configuración del Periodo</h3>
+                  <p class="section-hint">
+                    💡 Define el año y periodo académico. Ejemplo:
+                    <code>2025.1</code> para Enero-Junio 2025
+                  </p>
 
                   <div class="form-row">
                     <div class="form-group">
@@ -305,16 +330,28 @@
                 </div>
 
                 <div class="panel-section">
-                  <h3>ℹ️ Información del Evento</h3>
+                  <h3>ℹ️ Paso 3: Información del Evento</h3>
+                  <p class="section-hint">
+                    💡 La edición está prepuesta en la plantilla. Solo ingresa
+                    el mes y año del evento (ej: "noviembre 2025"). La plantilla
+                    usa: "La FPiT se llevará a cabo el viernes
+                    <code>{{ fecha_evento }}</code> en horario de 09:00 – 14:20
+                    hrs."
+                  </p>
 
                   <div class="form-group">
-                    <label for="edicion-evento">Edición del Evento *</label>
+                    <label for="edicion-evento">Mes y Año del Evento *</label>
                     <input
                       type="text"
                       id="edicion-evento"
-                      placeholder="Ej: XVI Edición 2025.1"
+                      placeholder="Ej: noviembre 2025"
                       required
                     />
+                    <small class="field-hint"
+                      >Ingresa el mes y año del evento (Ej: "noviembre 2025",
+                      "junio 2026"). La edición ya está prepuesta en la
+                      plantilla.</small
+                    >
                   </div>
 
                   <div class="form-group">
@@ -322,19 +359,27 @@
                     <input
                       type="text"
                       id="fecha-evento"
-                      placeholder="Ej: viernes 13 de junio de 2025"
+                      placeholder="Ej: 13 de junio de 2025"
                       required
                     />
+                    <small class="field-hint"
+                      >Fecha completa en formato largo (se usa en: "el viernes
+                      {{ fecha_evento }} en horario de...")</small
+                    >
                   </div>
 
                   <div class="form-group">
                     <label for="fecha-carta">Fecha de la Carta *</label>
                     <input type="date" id="fecha-carta" required />
+                    <small class="field-hint"
+                      >Se convertirá automáticamente a: "28 de octubre de
+                      2025"</small
+                    >
                   </div>
                 </div>
 
                 <div class="panel-section">
-                  <h3>🎯 Generación de Invitaciones</h3>
+                  <h3>🎯 Paso 4: Generar Invitaciones</h3>
 
                   <div class="output-info">
                     <p><strong>📂 Carpeta de destino:</strong></p>
@@ -343,81 +388,180 @@
                         >Configurar año y periodo primero</span
                       >/
                     </p>
-                    <p class="section-description" style="margin-top: 15px">
-                      Se generarán invitaciones para
-                      <strong>todos los invitados registrados</strong> en la
-                      base de datos.
-                    </p>
-                    <p class="section-description">
-                      Nomenclatura:
-                      <code
-                        >{{año}}.{{periodo}}-FPiT-DOSSIER-{{Organización_1}}-{{Nombre}}</code
-                      >
-                    </p>
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <span class="info-icon">📋</span>
+                        <span
+                          >Se generarán para
+                          <strong>todos los invitados</strong> registrados</span
+                        >
+                      </div>
+                      <div class="info-item">
+                        <span class="info-icon">📝</span>
+                        <span
+                          >Nomenclatura:
+                          <code>2025.1-FPiT-DOSSIER-ITM-Nombre.pdf</code></span
+                        >
+                      </div>
+                      <div class="info-item">
+                        <span class="info-icon">📄</span>
+                        <span>Dossier: Carta + Convocatoria + Cronograma</span>
+                      </div>
+                    </div>
                   </div>
 
                   <button class="btn btn-primary btn-large" id="btn-generar">
                     🚀 Generar Todas las Invitaciones
                   </button>
-
-                  <div
-                    class="progress-container"
-                    id="progress-container"
-                    style="display: none"
-                  >
-                    <div class="progress-bar">
-                      <div class="progress-fill" id="progress-fill"></div>
-                    </div>
-                    <p class="progress-text" id="progress-text">
-                      Generando... 0%
-                    </p>
-                  </div>
                 </div>
               </div>
 
-              <!-- Panel Derecho: Vista Previa -->
+              <!-- Panel Derecho: Guía de Uso -->
               <div class="invitaciones-panel-right">
                 <div class="preview-container">
-                  <h3>👁️ Vista Previa</h3>
+                  <h3>� Guía de Uso</h3>
 
-                  <div class="preview-controls">
-                    <button class="btn-icon" id="btn-zoom-out" title="Alejar">
-                      🔍−
-                    </button>
-                    <span id="zoom-level">100%</span>
-                    <button class="btn-icon" id="btn-zoom-in" title="Acercar">
-                      🔍+
-                    </button>
-                  </div>
+                  <div
+                    style="
+                      padding: 20px;
+                      background: #f8f9fa;
+                      border-radius: 8px;
+                      line-height: 1.8;
+                    "
+                  >
+                    <h4 style="margin-top: 0; color: var(--primary-blue)">
+                      ✅ Pasos para Generar Invitaciones:
+                    </h4>
 
-                  <div class="preview-content" id="preview-content">
-                    <div class="preview-placeholder">
-                      <div class="placeholder-icon">📄</div>
-                      <p>La vista previa aparecerá aquí</p>
-                      <p class="placeholder-hint">
-                        Completa los campos del evento para ver la vista previa
+                    <ol style="padding-left: 20px">
+                      <li style="margin-bottom: 15px">
+                        <strong>📁 Selecciona los 3 archivos:</strong>
+                        <ul style="margin-top: 5px; color: #666">
+                          <li>
+                            Plantilla DOCX (con variables como
+                            <code>{{ nombre_completo }}</code>)
+                          </li>
+                          <li>PDF de Convocatoria</li>
+                          <li>PDF de Cronograma y Croquis</li>
+                        </ul>
+                      </li>
+
+                      <li style="margin-bottom: 15px">
+                        <strong>⬆️ Carga los archivos:</strong>
+                        <ul style="margin-top: 5px; color: #666">
+                          <li>Click en "⬆️ Cargar Archivos al Backend"</li>
+                          <li>Espera la confirmación</li>
+                        </ul>
+                      </li>
+
+                      <li style="margin-bottom: 15px">
+                        <strong>📅 Configura el Periodo:</strong>
+                        <ul style="margin-top: 5px; color: #666">
+                          <li>Año (ej: 2025)</li>
+                          <li>Periodo (1 o 3)</li>
+                        </ul>
+                      </li>
+
+                      <li style="margin-bottom: 15px">
+                        <strong>ℹ️ Llena los datos del Evento:</strong>
+                        <ul style="margin-top: 5px; color: #666">
+                          <li>
+                            Mes y Año (ej: "noviembre 2025") - La edición está
+                            prepuesta en la plantilla
+                          </li>
+                          <li>Fecha del evento (ej: "13 de junio de 2025")</li>
+                          <li>
+                            Fecha de la carta (se auto-formatea a español)
+                          </li>
+                        </ul>
+                      </li>
+
+                      <li style="margin-bottom: 15px">
+                        <strong>🚀 Genera las Invitaciones:</strong>
+                        <ul style="margin-top: 5px; color: #666">
+                          <li>Click en "🚀 Generar Todas las Invitaciones"</li>
+                          <li>
+                            ⚠️ La pantalla se bloqueará durante el proceso
+                          </li>
+                          <li>Se generarán PDFs para TODOS los invitados</li>
+                          <li>
+                            Ubicación:
+                            <code
+                              >~/Desktop/{{año}}.{{periodo}}-invitaciones/</code
+                            >
+                          </li>
+                        </ul>
+                      </li>
+                    </ol>
+
+                    <hr
+                      style="
+                        margin: 20px 0;
+                        border: none;
+                        border-top: 1px solid #ddd;
+                      "
+                    />
+
+                    <h4 style="color: var(--primary-blue)">
+                      📝 Nomenclatura de Archivos:
+                    </h4>
+                    <p
+                      style="
+                        margin: 10px 0;
+                        font-family: monospace;
+                        background: white;
+                        padding: 10px;
+                        border-radius: 4px;
+                        font-size: 0.9rem;
+                      "
+                    >
+                      {{año}}.{{periodo}}-FPiT-DOSSIER-{{Abreviación}}-{{Nombre}}.pdf
+                    </p>
+                    <p style="color: #666; font-size: 0.9rem; margin: 10px 0">
+                      Ejemplo:
+                      <code>2025.1-FPiT-DOSSIER-ITM-Dr. Juan Pérez.pdf</code>
+                    </p>
+
+                    <hr
+                      style="
+                        margin: 20px 0;
+                        border: none;
+                        border-top: 1px solid #ddd;
+                      "
+                    />
+
+                    <h4 style="color: var(--primary-blue)">
+                      📄 Estructura del Dossier:
+                    </h4>
+                    <ul style="padding-left: 20px; color: #666">
+                      <li>Página 1: Carta personalizada</li>
+                      <li>Página 2: Convocatoria</li>
+                      <li>Página 3+: Cronograma y Croquis</li>
+                    </ul>
+
+                    <hr
+                      style="
+                        margin: 20px 0;
+                        border: none;
+                        border-top: 1px solid #ddd;
+                      "
+                    />
+
+                    <div
+                      style="
+                        background: #fff3cd;
+                        padding: 15px;
+                        border-radius: 4px;
+                        border-left: 4px solid #ffc107;
+                      "
+                    >
+                      <strong>💡 Consejo:</strong>
+                      <p style="margin: 5px 0 0 0; color: #856404">
+                        Asegúrate de agregar todos los invitados ANTES de
+                        generar. El sistema generará una invitación para cada
+                        invitado registrado en la base de datos.
                       </p>
                     </div>
-                  </div>
-
-                  <div class="preview-footer">
-                    <button
-                      class="btn btn-secondary"
-                      id="btn-preview-prev"
-                      disabled
-                    >
-                      ← Anterior
-                    </button>
-                    <span id="preview-counter"
-                      >Previsualizando invitados registrados</span
-                    >
-                    <button
-                      class="btn btn-secondary"
-                      id="btn-preview-next"
-                      disabled
-                    >
-                      Siguiente →
-                    </button>
                   </div>
                 </div>
               </div>

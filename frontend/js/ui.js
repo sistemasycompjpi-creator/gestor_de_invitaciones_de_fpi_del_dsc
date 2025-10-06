@@ -22,7 +22,7 @@ function mostrarModal(titulo, mensaje, icono = "✅", callback = null) {
 
   modalIcon.textContent = icono;
   modalTitle.textContent = titulo;
-  modalMessage.textContent = mensaje;
+  modalMessage.innerHTML = mensaje; // Permitir HTML en mensajes
 
   overlay.classList.add("show");
 

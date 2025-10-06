@@ -1,6 +1,6 @@
 # Referencia de la API
 
-El backend de Flask proporciona una API RESTful para gestionar los recursos de los invitados. Todas las rutas tienen el prefijo `/api`.
+El backend de Flask proporciona una API RESTful para gestionar los recursos del proyecto. Todas las rutas tienen el prefijo `/api`.
 
 **URL Base**: `http://127.0.0.1:5000`
 
@@ -8,55 +8,39 @@ El backend de Flask proporciona una API RESTful para gestionar los recursos de l
 
 ## Endpoints de Invitados (CRUD)
 
-### 1. Obtener todos los invitados
-
-- **Endpoint**: `GET /api/invitados`
-- **Descripción**: Devuelve una lista de todos los invitados registrados.
-
-### 2. Obtener un invitado por ID
-
-- **Endpoint**: `GET /api/invitados/<id>`
-- **Descripción**: Devuelve un único invitado por su ID.
-
-### 3. Crear un nuevo invitado
-
-- **Endpoint**: `POST /api/invitados`
-- **Descripción**: Crea un nuevo invitado.
-- **Cuerpo (JSON)**: Debe incluir `nombre_completo` y `caracter_invitacion`.
-
-### 4. Actualizar un invitado existente
-
-- **Endpoint**: `PUT /api/invitados/<id>`
-- **Descripción**: Actualiza los datos de un invitado existente.
-
-### 5. Eliminar un invitado
-
-- **Endpoint**: `DELETE /api/invitados/<id>`
-- **Descripción**: Elimina a un invitado de la base de datos.
+-   **GET `/api/invitados`**: Devuelve una lista de todos los invitados.
+-   **GET `/api/invitados/<id>`**: Devuelve un único invitado por su ID.
+-   **POST `/api/invitados`**: Crea un nuevo invitado.
+-   **PUT `/api/invitados/<id>`**: Actualiza un invitado existente.
+-   **DELETE `/api/invitados/<id>`**: Elimina un invitado.
 
 ---
 
 ## Endpoints de Filtros
 
-Estos endpoints devuelven una lista de invitados que cumplen con un criterio específico.
-
-- `GET /api/invitados/asesores_t1`: Devuelve todos los Asesores T1.
-- `GET /api/invitados/asesores_t2`: Devuelve todos los Asesores T2.
-- `GET /api/invitados/jurados_protocolo`: Devuelve los elegibles como Jurado de Protocolo.
-- `GET /api/invitados/jurados_informe`: Devuelve los elegibles como Jurado de Informe.
+-   **GET `/api/invitados/asesores_t1`**: Devuelve todos los Asesores T1.
+-   **GET `/api/invitados/asesores_t2`**: Devuelve todos los Asesores T2.
+-   **GET `/api/invitados/jurados_protocolo`**: Devuelve los elegibles como Jurado de Protocolo.
+-   **GET `/api/invitados/jurados_informe`**: Devuelve los elegibles como Jurado de Informe.
 
 ---
 
-## Endpoint de Generación de Invitaciones
+## Endpoints de Generación de Invitaciones
 
--   **Endpoint**: `POST /api/invitaciones/generar`
--   **Estado**: ⚠️ **No Implementado**
--   **Descripción**: Este endpoint está planificado para recibir los datos y archivos PDF desde el frontend y generar las invitaciones finales. La lógica del backend para este endpoint aún debe ser desarrollada.
--   **Para más detalles**, consulta la **Guía de Desarrollo**.
+-   **POST `/api/upload-assets`**
+    -   **Descripción**: Sube los archivos base (plantilla `.docx`, convocatoria `.pdf`, cronograma `.pdf`) al servidor para ser usados en la generación de documentos.
+    -   **Cuerpo**: `multipart/form-data` con los tres archivos.
+
+-   **POST `/api/generate-all-invitations`**
+    -   **Descripción**: Inicia el proceso de generación de dossieres en PDF para todos los invitados registrados en la base de datos.
+    -   **Cuerpo (JSON)**: Contiene los datos del evento (`anio`, `periodo`, `fecha_evento`, etc.).
+
+-   **POST `/api/preview-invitation/<invitado_id>`**
+    -   **Descripción**: Genera una imagen PNG de vista previa para un invitado específico, permitiendo al usuario ver cómo lucirá la invitación antes de la generación final.
+    -   **Cuerpo (JSON)**: Contiene los datos del evento necesarios para rellenar la plantilla.
 
 ---
 
 ## Endpoint de Estado del Servidor
 
-- **Endpoint**: `GET /api/health`
-- **Descripción**: Se utiliza para verificar que el servidor backend está en funcionamiento.
+-   **GET `/api/health`**: Endpoint de diagnóstico para verificar que el servidor está en funcionamiento.

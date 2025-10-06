@@ -2,24 +2,11 @@
 
 Sigue estos pasos para instalar y utilizar el Gestor de Invitaciones JPi.
 
-## Instalación
+## Instalación y Ejecución
 
 1.  **Requisitos**: Asegúrate de tener **Node.js** (v14+) y **Python** (v3.8+) instalados.
-2.  **Clona el proyecto** y abre una terminal en la carpeta raíz.
-3.  **Instala las dependencias** de Node.js con el comando:
-    ```bash
-    npm install
-    ```
-
-## Ejecución
-
-Para iniciar la aplicación, ejecuta:
-
-```bash
-npm start
-```
-
-La aplicación iniciará el servidor de fondo y abrirá la ventana principal.
+2.  **Instala dependencias**: En la carpeta raíz del proyecto, ejecuta `npm install`.
+3.  **Inicia la aplicación**: Ejecuta `npm start`.
 
 ---
 
@@ -27,20 +14,19 @@ La aplicación iniciará el servidor de fondo y abrirá la ventana principal.
 
 ### Gestión de Invitados
 
--   **Agregar**: Ve a la pestaña "Agregar Invitado", completa el formulario y guarda.
--   **Editar**: En la lista de invitados, haz clic en el botón "✏️ Editar", modifica los datos y actualiza.
--   **Eliminar**: Haz clic en "🗑️ Eliminar" en la tarjeta de un invitado y confirma la acción.
--   **Filtrar**: Usa los botones en la parte superior de la lista para ver a los invitados por rol.
+-   **Agregar/Editar/Eliminar**: Administra la lista de invitados desde las pestañas "Agregar Invitado" y "Lista de Invitados".
+-   **Filtrar**: Usa los botones de filtro para encontrar invitados por su rol específico.
 
 ### Generación de Invitaciones
 
-La pestaña **"Generar Invitaciones"** te permite configurar y previsualizar las invitaciones en PDF.
+La pestaña **"Generar Invitaciones"** te permite crear los dossieres completos en formato PDF.
 
-1.  **Carga los 3 archivos PDF requeridos**: Plantilla, Convocatoria y Cronograma.
-2.  **Completa los datos del evento**: Año, periodo, fecha, etc.
-3.  **Previsualiza**: Usa los controles de navegación (← / →) y zoom para ver cómo se verá cada invitación.
+**Flujo de trabajo:**
 
-**Nota Importante**: La interfaz de esta sección está 100% funcional para la configuración y previsualización. Sin embargo, el paso final de **generar los archivos PDF aún no está implementado en el backend**. Para detalles técnicos sobre cómo implementar esta función, consulta la **Guía de Desarrollo**.
+1.  **Cargar Archivos Base**: Sube los tres documentos requeridos: la plantilla de la carta (`.docx`), la convocatoria (`.pdf`) y el cronograma (`.pdf`). Haz clic en **"⬆️ Cargar Archivos"** para enviarlos al servidor.
+2.  **Completar Datos del Evento**: Rellena la información del evento, como el año, periodo y fechas.
+3.  **Previsualizar (Opcional)**: Selecciona un invitado de la lista desplegable para generar una vista previa en imagen de cómo se verá su invitación.
+4.  **Generar Invitaciones**: Haz clic en el botón **"Generar Todas las Invitaciones"**. El sistema creará un dossier en PDF para cada invitado registrado y lo guardará en una nueva carpeta en tu Escritorio (ej. `~/Desktop/2025.1-invitaciones/`).
 
 ### Estadísticas
 

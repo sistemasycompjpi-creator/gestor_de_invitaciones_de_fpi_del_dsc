@@ -6,81 +6,61 @@ Esta guía está destinada a desarrolladores que deseen modificar o ampliar la f
 
 El frontend utiliza un patrón de módulos simple donde cada archivo `.js` en `frontend/js/` se encarga de una única responsabilidad. Los módulos exponen sus funciones públicas adjuntándolas al objeto `window`.
 
-### Estructura de un Módulo
-
-```javascript
-// ========== MÓDULO DE [NOMBRE] ==========
-// Descripción de la responsabilidad del módulo.
-
-// Variables y estado privados del módulo
-let miVariablePrivada = [];
-
-// Funciones privadas (no se exponen en window)
-function funcionAuxiliar() {
-  //...
-}
-
-// Funciones públicas
-function miFuncionPublica() {
-  //...
-}
-
-// Se exponen las funciones públicas en el objeto window
-window.MiModulo = {
-  miFuncionPublica,
-};
-```
-
 ### Añadir una Nueva Funcionalidad
 
 1.  **Crear un nuevo archivo de módulo** en `frontend/js/` (ej. `reportes.js`).
 2.  **Escribir la lógica** dentro del archivo, siguiendo el patrón de módulo.
-3.  **Incluir el nuevo script** en `frontend/index.html` al final de la lista de módulos, justo antes de `main.js`.
-    ```html
-    <script src="./js/reportes.js"></script>
-    <script src="./js/main.js"></script>
-    ```
-4.  **Llamar a las nuevas funciones** desde otros módulos o desde la UI según sea necesario.
-    ```javascript
-    window.Reportes.generar();
-    ```
+3.  **Incluir el nuevo script** en `frontend/index.html`.
+4.  **Llamar a las nuevas funciones** desde otros módulos o desde la UI.
 
 ---
 
-## Tarea Pendiente: Implementar Endpoint de Generación de PDF
+## Implementación de Generación de PDF
 
-El frontend para la generación de invitaciones está completo, pero el endpoint del backend no está implementado. 
+La generación de documentos PDF es gestionada por el backend. El flujo es el siguiente:
 
-### Especificación del Endpoint
+1.  **Carga de Assets**: El usuario sube una plantilla `.docx` y dos archivos `.pdf` (convocatoria, cronograma) a través del endpoint `/api/upload-assets`.
+2.  **Llamada de Generación**: El frontend envía los detalles del evento al endpoint `/api/generate-all-invitations`.
+3.  **Procesamiento en Backend**: El servidor utiliza un módulo Python (`document_generator.py`) para realizar las siguientes acciones por cada invitado:
+    a.  Toma la plantilla `.docx`.
+    b.  Reemplaza las variables (ej. `{{nombre_completo}}`) con los datos del invitado.
+    c.  Convierte el `.docx` resultante a un `.pdf` temporal.
+    d.  Une el PDF de la carta con los PDFs de la convocatoria y el cronograma.
+    e.  Guarda el dossier final en el Escritorio del usuario.
 
--   **Ruta**: `POST /api/invitaciones/generar`
--   **Método**: `POST`
--   **Tipo de Contenido**: `multipart/form-data`
+### Plantilla de la Carta de Invitación
 
-### Datos que Recibirá del Frontend
+La lógica del backend reemplaza variables en una plantilla `.docx` para generar la carta. La plantilla utiliza la sintaxis de `python-docx-template`, que es similar a Jinja2.
 
-El backend recibirá un `FormData` con los siguientes campos:
+#### Texto de Plantilla Recomendado
 
--   **Archivos PDF**:
-    -   `plantilla_doc`: El PDF con el membrete.
-    -   `convocatoria`: El PDF de la convocatoria.
-    -   `cronograma`: El PDF del cronograma.
--   **Datos del Evento (texto)**:
-    -   `periodo_anio`, `periodo_numero`
-    -   `edicion_evento`, `fecha_evento`, `fecha_carta`
--   **Plantilla de Texto (texto)**:
-    -   `plantilla_texto`: El cuerpo de la carta con variables como `{{ nombre_completo }}`.
--   **Datos de Invitados (JSON string)**:
-    -   `invitados_data`: Un string JSON que contiene un array con todos los invitados de la base de datos.
+```text
+{{ nombre_completo }}
+{% for puesto in puestos %}{{puesto.cargo}}{% if puesto.organizacion %} - {{ puesto.organizacion }}{% endif %}
+{% endfor %}
 
-### Lógica a Implementar en el Backend
+El Instituto Tecnológico de Morelia, a través del Departamento de Ingeniería en Sistemas y Computación, le extiende una cordial invitación a participar como {{ caracter_invitacion }} en la
 
-1.  Parsear el `FormData`.
-2.  Decodificar el string `invitados_data` a un objeto Python.
-3.  Crear la carpeta de destino en el Escritorio del usuario si no existe: `~/Desktop/{{año}}.{{periodo}}-invitaciones/`.
-4.  Iterar sobre cada invitado en `invitados_data`:
-    a.  Reemplazar las variables en `plantilla_texto` con los datos del invitado.
-    b.  Crear un PDF temporal a partir de este texto (usando `reportlab` o similar).
-    c.  Unir los PDFs en este orden: `plantilla_doc` (membrete) + el PDF de texto recién creado + `convocatoria` + `cronograma` (usando `PyPDF2` o similar).
-    d.  Guardar el PDF final en la carpeta de destino con la nomenclatura: `{{año}}.{{periodo}}-FPiT-DOSSIER-{{Organización_1}}-{{Nombre_completo}}.pdf`.
-5.  Devolver una respuesta JSON indicando el éxito y la ruta de la carpeta donde se guardaron los archivos.
+Feria de Proyectos de Investigación Tecnológica de Pregrado de la Carrera de Ingeniería en Sistemas Computacionales
+
+{{ edicion_evento }}
+
+(...
+[Resto del cuerpo de la carta]
+...)
+
+Morelia, Michoacán, {{ fecha_carta }}.
+
+Atentamente,
+
+Claudio Ernesto Florián Arenas
+Jefe del Departamento de Ingeniería en Sistemas y Computación
+Instituto Tecnológico de Morelia
+```
+
+#### Variables Disponibles
+
+-   **`puestos`**: Una lista de objetos, donde cada objeto tiene las claves `cargo` y `organizacion`.
+-   **Datos del Invitado (de la BD):** `{{ nombre_completo }}`, `{{ caracter_invitacion }}`.
+-   **Datos del Evento (del formulario):** `{{ edicion_evento }}`, `{{ fecha_evento }}`, `{{ fecha_carta }}`.
+

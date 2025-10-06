@@ -1,56 +1,14 @@
 // ========== MÓDULO DE GENERACIÓN DE INVITACIONES ==========
 // Maneja toda la lógica de generación de invitaciones en PDF
 
-// Plantilla de la carta de invitación
-const PLANTILLA_INVITACION = `{{ nombre_completo }}
-{{ cargo_1 }}
-{{ organizacion_1 }}
-
-El Instituto Tecnológico de Morelia, a través del Departamento de Ingeniería en Sistemas y Computación, le extiende una cordial invitación a participar como {{ motivo_invitacion }} en la
-
-Feria de Proyectos de Investigación Tecnológica de Pregrado de la Carrera de Ingeniería en Sistemas Computacionales 
-
-{{ edicion_evento }}
-
-cuyos objetivos son:
-* difundir ante actores relevantes los trabajos de investigación de pregrado de la carrera de Ingeniería en Sistemas Computacionales (ISC) 
-
-* propiciar en los alumnos el acercamiento a problemáticas científico-tecnológicas en diversos contextos en el ámbito de su especialidad, y a su solución 
-
-* impulsar un semillero de proyectos científicos y tecnológicos que conduzcan a la obtención de grado por Titulación Integral por Proyecto de Investigación y a la participación en eventos nacionales o internacionales de ciencia, tecnología e innovación 
-
-La FPiT se llevará a cabo el 
-
-{{ fecha_evento }}, con el evento inaugural en la Sala Audiovisual 1 del Campus Principal (Edificio F). 
-
-Me permito anexar convocatoria, programa general y croquis del evento. Favor de considerar protocolo de vestimenta semiformal. 
-
-Esperamos contar con su valiosa participación y quedamos atentos a su respuesta; 
-
-así como a cualquier duda o información adicional que se requiera. 
-
-Morelia, Michoacán, {{ fecha_carta }}.
-
-Atentamente,
-
-{{ nombre_firmante }}
-{{ cargo_firmante }}
-Instituto Tecnológico de Morelia 
-
-Favor de confirmar su participación mediante correo: 
-
-sistemas.investigacion@morelia.tecnm.mx`;
-
 // Estado de invitaciones
 let invitacionesState = {
   archivos: {
-    plantillaDoc: null,
+    plantillaDocx: null,
     convocatoria: null,
     cronograma: null,
   },
-  invitadosSeleccionados: [],
-  zoomLevel: 100,
-  previewIndex: 0,
+  archivosSubidos: false,
 };
 
 /**
@@ -58,73 +16,151 @@ let invitacionesState = {
  */
 function inicializarInvitaciones() {
   configurarSubidaArchivos();
-  cargarInvitadosParaPreview();
-  configurarControlesPreview();
   configurarGeneracion();
   configurarPeriodo();
 }
 
 /**
- * Configura la subida de archivos PDF
+ * Configura los inputs de archivos y el botón de carga
  */
 function configurarSubidaArchivos() {
-  const fileInputs = [
-    {
-      id: "file-plantilla-doc",
-      status: "status-plantilla-doc",
-      key: "plantillaDoc",
-    },
-    {
-      id: "file-convocatoria",
-      status: "status-convocatoria",
-      key: "convocatoria",
-    },
-    { id: "file-cronograma", status: "status-cronograma", key: "cronograma" },
-  ];
+  const btnCargar = document.getElementById("btn-cargar-archivos");
 
-  fileInputs.forEach(({ id, status, key }) => {
-    const input = document.getElementById(id);
-    const statusEl = document.getElementById(status);
+  if (btnCargar) {
+    btnCargar.addEventListener("click", cargarArchivos);
+  }
 
-    if (!input || !statusEl) return;
-
-    input.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        invitacionesState.archivos[key] = file;
-        statusEl.textContent = `✅ ${file.name}`;
-        statusEl.style.color = "var(--success-green)";
-      } else {
-        invitacionesState.archivos[key] = null;
-        statusEl.textContent = "Sin seleccionar";
-        statusEl.style.color = "var(--text-secondary)";
+  // Listeners para mostrar nombre de archivo seleccionado
+  ["file-plantilla-docx", "file-convocatoria", "file-cronograma"].forEach(
+    (id) => {
+      const fileInput = document.getElementById(id);
+      if (fileInput) {
+        fileInput.addEventListener("change", (e) => {
+          const statusId = id.replace("file-", "status-");
+          const statusEl = document.getElementById(statusId);
+          if (statusEl && e.target.files[0]) {
+            statusEl.textContent = `📄 ${e.target.files[0].name}`;
+            statusEl.style.color = "var(--primary)";
+          }
+        });
       }
-    });
-  });
+    }
+  );
 }
 
 /**
- * Carga invitados para preview (todos los de la BD)
+ * Carga los archivos y los envía al backend
  */
-async function cargarInvitadosParaPreview() {
-  try {
-    // Obtener invitados de la lista
-    const invitados =
-      window.InvitadosLista && window.InvitadosLista.obtenerInvitados
-        ? window.InvitadosLista.obtenerInvitados()
-        : [];
+async function cargarArchivos() {
+  const fileInputs = {
+    plantillaDocx: document.getElementById("file-plantilla-docx"),
+    convocatoria: document.getElementById("file-convocatoria"),
+    cronograma: document.getElementById("file-cronograma"),
+  };
 
-    // Si no hay invitados, intentar cargar desde API
-    if (invitados.length === 0) {
-      const invitadosAPI = await window.API.obtenerInvitados();
-      invitacionesState.invitadosSeleccionados = [...invitadosAPI];
+  // Validar que todos los archivos estén seleccionados
+  if (
+    !fileInputs.plantillaDocx?.files[0] ||
+    !fileInputs.convocatoria?.files[0] ||
+    !fileInputs.cronograma?.files[0]
+  ) {
+    if (window.UI && window.UI.mostrarModal) {
+      window.UI.mostrarModal(
+        "⚠️ Archivos Incompletos",
+        "Por favor selecciona los 3 archivos requeridos:\n• Plantilla DOCX\n• Convocatoria PDF\n• Cronograma PDF",
+        "⚠️"
+      );
+    }
+    return;
+  }
+
+  const btnCargar = document.getElementById("btn-cargar-archivos");
+  if (btnCargar) btnCargar.disabled = true;
+
+  // Crear modal de carga
+  const modalOverlay = document.createElement("div");
+  modalOverlay.className = "modal-overlay";
+  modalOverlay.innerHTML = `
+    <div class="modal-progress">
+      <div class="modal-header-progress">
+        <h3>📤 Cargando Archivos</h3>
+      </div>
+      <div class="modal-body-progress">
+        <div class="progress-spinner"></div>
+        <p class="progress-status">Subiendo archivos al servidor...</p>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modalOverlay);
+
+  try {
+    // Preparar FormData
+    const formData = new FormData();
+    formData.append("plantilla_docx", fileInputs.plantillaDocx.files[0]);
+    formData.append("convocatoria_pdf", fileInputs.convocatoria.files[0]);
+    formData.append("cronograma_pdf", fileInputs.cronograma.files[0]);
+
+    // Enviar al backend
+    const response = await fetch("http://127.0.0.1:5000/api/upload-files", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      invitacionesState.archivos = {
+        plantillaDocx: result.files.plantilla_docx,
+        convocatoria: result.files.convocatoria_pdf,
+        cronograma: result.files.cronograma_pdf,
+      };
+      invitacionesState.archivosSubidos = true;
+
+      // Actualizar UI con checkmarks verdes
+      [
+        "status-plantilla-docx",
+        "status-convocatoria",
+        "status-cronograma",
+      ].forEach((id) => {
+        const statusEl = document.getElementById(id);
+        if (statusEl) {
+          const fileName = statusEl.textContent.replace("📄 ", "");
+          statusEl.innerHTML = `✅ ${fileName}`;
+          statusEl.style.color = "var(--success)";
+        }
+      });
+
+      // Cerrar modal de carga
+      document.body.removeChild(modalOverlay);
+
+      // Mostrar modal de éxito
+      if (window.UI && window.UI.mostrarModal) {
+        window.UI.mostrarModal(
+          "✅ Archivos Cargados",
+          "Los 3 archivos se cargaron correctamente al servidor.\n\n✓ Plantilla DOCX\n✓ Convocatoria PDF\n✓ Cronograma PDF\n\nYa puedes generar las invitaciones.",
+          "✅"
+        );
+      }
     } else {
-      invitacionesState.invitadosSeleccionados = [...invitados];
+      throw new Error(result.error || "Error al cargar archivos");
+    }
+  } catch (error) {
+    console.error("Error al cargar archivos:", error);
+
+    // Cerrar modal de carga
+    if (document.body.contains(modalOverlay)) {
+      document.body.removeChild(modalOverlay);
     }
 
-    actualizarPreview();
-  } catch (error) {
-    console.error("Error al cargar invitados para preview:", error);
+    if (window.UI && window.UI.mostrarModal) {
+      window.UI.mostrarModal(
+        "❌ Error",
+        `No se pudieron cargar los archivos.\n\nError: ${error.message}`,
+        "❌"
+      );
+    }
+  } finally {
+    if (btnCargar) btnCargar.disabled = false;
   }
 }
 
@@ -141,178 +177,13 @@ function configurarPeriodo() {
     anioInput.value = now.getFullYear();
   }
 
-  // Listener para actualizar folder name y preview
-  const updateFolder = () => {
-    actualizarFolderName();
-    actualizarPreview();
-  };
+  // Listener para actualizar folder name
+  const updateFolder = () => actualizarFolderName();
   if (anioInput) anioInput.addEventListener("change", updateFolder);
   if (periodoInput) periodoInput.addEventListener("change", updateFolder);
 
   // Actualizar inicialmente
   actualizarFolderName();
-}
-
-/**
- * Configura los controles de preview
- */
-function configurarControlesPreview() {
-  const btnZoomIn = document.getElementById("btn-zoom-in");
-  const btnZoomOut = document.getElementById("btn-zoom-out");
-  const btnPrev = document.getElementById("btn-preview-prev");
-  const btnNext = document.getElementById("btn-preview-next");
-
-  // Configurar listeners de campos para actualizar preview
-  const campos = ["edicion-evento", "fecha-evento", "fecha-carta"];
-  campos.forEach((id) => {
-    const input = document.getElementById(id);
-    if (input) {
-      input.addEventListener("input", () => actualizarPreview());
-    }
-  });
-
-  if (btnZoomIn) {
-    btnZoomIn.addEventListener("click", () => {
-      if (invitacionesState.zoomLevel < 200) {
-        invitacionesState.zoomLevel += 10;
-        actualizarZoom();
-      }
-    });
-  }
-
-  if (btnZoomOut) {
-    btnZoomOut.addEventListener("click", () => {
-      if (invitacionesState.zoomLevel > 50) {
-        invitacionesState.zoomLevel -= 10;
-        actualizarZoom();
-      }
-    });
-  }
-
-  if (btnPrev) {
-    btnPrev.addEventListener("click", () => {
-      if (invitacionesState.previewIndex > 0) {
-        invitacionesState.previewIndex--;
-        actualizarPreview();
-      }
-    });
-  }
-
-  if (btnNext) {
-    btnNext.addEventListener("click", () => {
-      if (
-        invitacionesState.previewIndex <
-        invitacionesState.invitadosSeleccionados.length - 1
-      ) {
-        invitacionesState.previewIndex++;
-        actualizarPreview();
-      }
-    });
-  }
-}
-
-/**
- * Actualiza el nivel de zoom
- */
-function actualizarZoom() {
-  const zoomLevelEl = document.getElementById("zoom-level");
-  if (zoomLevelEl) {
-    zoomLevelEl.textContent = `${invitacionesState.zoomLevel}%`;
-  }
-}
-
-/**
- * Actualiza la vista previa
- */
-function actualizarPreview() {
-  const previewCounter = document.getElementById("preview-counter");
-  const btnPrev = document.getElementById("btn-preview-prev");
-  const btnNext = document.getElementById("btn-preview-next");
-  const previewContent = document.getElementById("preview-content");
-
-  const count = invitacionesState.invitadosSeleccionados.length;
-  const index = invitacionesState.previewIndex;
-
-  if (previewCounter) {
-    previewCounter.textContent =
-      count > 0 ? `Invitado ${index + 1} de ${count}` : "Cargando invitados...";
-  }
-
-  if (btnPrev) {
-    btnPrev.disabled = index === 0 || count === 0;
-  }
-
-  if (btnNext) {
-    btnNext.disabled = index >= count - 1 || count === 0;
-  }
-
-  // Generar preview con la plantilla
-  if (previewContent && count > 0) {
-    const invitado = invitacionesState.invitadosSeleccionados[index];
-    const periodoAnio =
-      document.getElementById("periodo-anio")?.value || "[año]";
-    const periodoNumero =
-      document.getElementById("periodo-numero")?.value || "[periodo]";
-    const edicionEvento =
-      document.getElementById("edicion-evento")?.value ||
-      "[Edición del evento]";
-    const fechaEvento =
-      document.getElementById("fecha-evento")?.value || "[Fecha del evento]";
-    const fechaCartaInput = document.getElementById("fecha-carta")?.value;
-
-    // Formatear fecha de carta
-    let fechaCarta = "[Fecha de la carta]";
-    if (fechaCartaInput) {
-      const fecha = new Date(fechaCartaInput + "T00:00:00");
-      fechaCarta = fecha.toLocaleDateString("es-MX", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    }
-
-    // Generar nombre de archivo según nomenclatura
-    const organizacion = invitado.organizacion_1 || "SIN_ORG";
-    const nombreLimpio = invitado.nombre_completo.replace(/\s+/g, " ").trim();
-    const nombreArchivo = `${periodoAnio}.${periodoNumero}-FPiT-DOSSIER-${organizacion}-${nombreLimpio}.pdf`;
-
-    // Reemplazar variables en la plantilla
-    let cartaGenerada = PLANTILLA_INVITACION.replace(
-      "{{ nombre_completo }}",
-      invitado.nombre_completo || ""
-    )
-      .replace("{{ cargo_1 }}", invitado.cargo_1 || "")
-      .replace("{{ organizacion_1 }}", invitado.organizacion_1 || "")
-      .replace(
-        "{{ motivo_invitacion }}",
-        invitado.caracter_invitacion || "[Motivo de invitación]"
-      )
-      .replace("{{ edicion_evento }}", edicionEvento)
-      .replace("{{ fecha_evento }}", fechaEvento)
-      .replace("{{ fecha_carta }}", fechaCarta)
-      .replace("{{ nombre_firmante }}", "M. en C. Isaac Ayala Barajas")
-      .replace(
-        "{{ cargo_firmante }}",
-        "Jefe del Departamento de Ingeniería en Sistemas Computacionales"
-      );
-
-    previewContent.innerHTML = `
-      <div style="background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 600px; font-family: 'Times New Roman', serif; line-height: 1.8;">
-        <div style="white-space: pre-wrap; font-size: 14px; text-align: justify;">
-${cartaGenerada}
-        </div>
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid var(--primary-blue); text-align: center; color: #666; font-size: 0.85rem; font-family: sans-serif;">
-          <p><strong>📄 Vista Previa</strong></p>
-          <p style="margin: 8px 0;">Página 1: Carta de invitación</p>
-          <p style="margin: 8px 0;">Página 2: Convocatoria (PDF anexado)</p>
-          <p style="margin: 8px 0;">Página 3+: Cronograma y Croquis (PDF anexado)</p>
-          <hr style="margin: 15px 0; border: none; border-top: 1px solid #ddd;">
-          <p style="margin: 8px 0;"><strong>📁 Nombre de archivo:</strong></p>
-          <p style="font-family: monospace; font-size: 0.75rem; word-break: break-all; padding: 5px; background: #f5f5f5; border-radius: 4px;">${nombreArchivo}</p>
-        </div>
-      </div>
-    `;
-  }
 }
 
 /**
@@ -344,7 +215,7 @@ function actualizarFolderName() {
 }
 
 /**
- * Genera las invitaciones
+ * Genera las invitaciones llamando al backend
  */
 async function generarInvitaciones() {
   // Obtener valores de los campos
@@ -377,146 +248,189 @@ async function generarInvitaciones() {
     return;
   }
 
-  if (invitacionesState.invitadosSeleccionados.length === 0) {
+  if (!invitacionesState.archivosSubidos) {
     if (window.UI && window.UI.mostrarModal) {
       window.UI.mostrarModal(
-        "⚠️ Sin Invitados",
-        "No hay invitados registrados en la base de datos. Por favor agrega invitados primero.",
+        "⚠️ Archivos no cargados",
+        "Primero debes cargar los archivos base usando el botón '⬆️ Cargar Archivos'.",
         "⚠️"
       );
     }
     return;
   }
 
-  if (!invitacionesState.archivos.plantillaDoc) {
-    if (window.UI && window.UI.mostrarModal) {
-      window.UI.mostrarModal(
-        "⚠️ Archivo Faltante",
-        "Debes cargar el archivo de plantilla PDF base.",
-        "⚠️"
-      );
-    }
-    return;
-  }
-
-  if (!invitacionesState.archivos.convocatoria) {
-    if (window.UI && window.UI.mostrarModal) {
-      window.UI.mostrarModal(
-        "⚠️ Archivo Faltante",
-        "Debes cargar el PDF de convocatoria.",
-        "⚠️"
-      );
-    }
-    return;
-  }
-
-  if (!invitacionesState.archivos.cronograma) {
-    if (window.UI && window.UI.mostrarModal) {
-      window.UI.mostrarModal(
-        "⚠️ Archivo Faltante",
-        "Debes cargar el PDF de cronograma y croquis.",
-        "⚠️"
-      );
-    }
-    return;
-  }
-
-  // Mostrar progreso
-  const progressContainer = document.getElementById("progress-container");
-  const progressFill = document.getElementById("progress-fill");
-  const progressText = document.getElementById("progress-text");
   const btnGenerar = document.getElementById("btn-generar");
-
-  if (progressContainer) progressContainer.style.display = "block";
   if (btnGenerar) btnGenerar.disabled = true;
 
+  // ============= BLOQUEAR TODA LA UI =============
+  // Deshabilitar navegación
+  const navButtons = document.querySelectorAll(".nav-item");
+  navButtons.forEach((btn) => (btn.disabled = true));
+
+  // Deshabilitar todos los inputs y botones de la página
+  const allInputs = document.querySelectorAll(
+    "input, button, select, textarea"
+  );
+  allInputs.forEach((el) => {
+    el.dataset.wasDisabled = el.disabled ? "true" : "false";
+    el.disabled = true;
+  });
+
+  // Crear modal de progreso animado CON z-index alto para bloquear todo
+  const modalOverlay = document.createElement("div");
+  modalOverlay.className = "modal-overlay";
+  modalOverlay.style.zIndex = "99999"; // Asegurar que esté por encima de todo
+  modalOverlay.style.pointerEvents = "all"; // Bloquear clicks
+  modalOverlay.innerHTML = `
+    <div class="modal-progress">
+      <div class="modal-header-progress">
+        <h3>🚀 Generando Invitaciones</h3>
+        <p style="font-size: 14px; color: #666; margin-top: 10px;">
+          ⚠️ No cierres esta ventana ni cambies de pestaña
+        </p>
+      </div>
+      <div class="modal-body-progress">
+        <div class="progress-spinner"></div>
+        <p class="progress-status" id="progress-status-text">Preparando generación...</p>
+        <div class="progress-bar-large">
+          <div class="progress-fill-large" id="progress-fill-large"></div>
+        </div>
+        <p class="progress-percentage" id="progress-percentage">0%</p>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modalOverlay);
+
+  const statusText = document.getElementById("progress-status-text");
+  const progressFill = document.getElementById("progress-fill-large");
+  const progressPercentage = document.getElementById("progress-percentage");
+
   try {
-    // Preparar datos para enviar al backend
-    const formData = new FormData();
+    // Preparar datos del evento
+    const eventData = {
+      anio: periodoAnio,
+      periodo: periodoNumero,
+      edicion_evento: edicionEvento,
+      fecha_evento: fechaEvento,
+      fecha_carta: fechaCarta,
+    };
 
-    // Agregar archivos PDF
-    formData.append("plantilla_doc", invitacionesState.archivos.plantillaDoc);
-    formData.append("convocatoria", invitacionesState.archivos.convocatoria);
-    formData.append("cronograma", invitacionesState.archivos.cronograma);
-
-    // Agregar configuración de periodo
-    formData.append("periodo_anio", periodoAnio);
-    formData.append("periodo_numero", periodoNumero);
-
-    // Agregar datos del evento
-    formData.append("edicion_evento", edicionEvento);
-    formData.append("fecha_evento", fechaEvento);
-    formData.append("fecha_carta", fechaCarta);
-
-    // Datos del firmante (hardcoded)
-    formData.append("nombre_firmante", "M. en C. Isaac Ayala Barajas");
-    formData.append(
-      "cargo_firmante",
-      "Jefe del Departamento de Ingeniería en Sistemas Computacionales"
-    );
-
-    // Agregar plantilla de texto
-    formData.append("plantilla_texto", PLANTILLA_INVITACION);
-
-    // Agregar datos completos de invitados
-    formData.append(
-      "invitados_data",
-      JSON.stringify(invitacionesState.invitadosSeleccionados)
-    );
-
-    // Simular progreso
-    let progress = 0;
-    const progressInterval = setInterval(() => {
-      progress += 5;
-      if (progress <= 90) {
-        if (progressFill) progressFill.style.width = `${progress}%`;
-        if (progressText)
-          progressText.textContent = `Generando... ${progress}%`;
-      }
-    }, 200);
+    // Animar progreso inicial
+    setTimeout(() => {
+      statusText.textContent = "📤 Enviando datos al servidor...";
+      progressFill.style.width = "20%";
+      progressPercentage.textContent = "20%";
+    }, 300);
 
     // Llamar al backend
-    const result = await window.API.generarInvitaciones(formData);
+    const response = await fetch(
+      "http://127.0.0.1:5000/api/generate-all-invitations",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(eventData),
+      }
+    );
 
-    clearInterval(progressInterval);
+    // Animar progreso medio
+    statusText.textContent = "📝 Procesando plantillas...";
+    progressFill.style.width = "50%";
+    progressPercentage.textContent = "50%";
 
-    // Completar progreso
-    if (progressFill) progressFill.style.width = "100%";
-    if (progressText) progressText.textContent = "¡Completado! 100%";
+    const result = await response.json();
 
-    // Mostrar resultado
-    setTimeout(() => {
-      if (progressContainer) progressContainer.style.display = "none";
-      if (progressFill) progressFill.style.width = "0%";
-      if (progressText) progressText.textContent = "Generando... 0%";
+    // Animar progreso avanzado
+    statusText.textContent = "📄 Generando PDFs...";
+    progressFill.style.width = "80%";
+    progressPercentage.textContent = "80%";
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    if (result.success) {
+      // Completar progreso
+      statusText.textContent = "✅ ¡Completado!";
+      progressFill.style.width = "100%";
+      progressPercentage.textContent = "100%";
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      // Cerrar modal de progreso
+      document.body.removeChild(modalOverlay);
+
+      // Mostrar modal de éxito con detalles
+      const successMessage = `
+        <div style="text-align: left;">
+          <p style="font-size: 18px; margin-bottom: 15px;">
+            ✅ <strong>${
+              result.generated_count || result.count || 0
+            } invitaciones generadas exitosamente</strong>
+          </p>
+          <p style="margin: 10px 0;">
+            📂 <strong>Ubicación:</strong><br>
+            <code style="background: #f0f0f0; padding: 5px 10px; border-radius: 4px; display: inline-block; margin-top: 5px;">
+              ~/Desktop/${periodoAnio}.${periodoNumero}-invitaciones/
+            </code>
+          </p>
+          <p style="margin: 10px 0;">
+            🎯 <strong>Nomenclatura:</strong><br>
+            <code style="font-size: 12px;">${periodoAnio}.${periodoNumero}-FPiT-DOSSIER-[Org]-[Nombre].pdf</code>
+          </p>
+          ${
+            result.errors && result.errors.length > 0
+              ? `
+          <p style="margin-top: 15px; color: #ff9800;">
+            ⚠️ <strong>Errores encontrados:</strong><br>
+            ${result.errors
+              .map((err) => `• ${err.invitado}: ${err.error}`)
+              .join("<br>")}
+          </p>
+          `
+              : ""
+          }
+        </div>
+      `;
 
       if (window.UI && window.UI.mostrarModal) {
         window.UI.mostrarModal(
-          "✅ Invitaciones Generadas",
-          `Se han generado ${invitacionesState.invitadosSeleccionados.length} invitaciones correctamente.\n\nRevisa la carpeta: ~/Desktop/${periodoAnio}.${periodoNumero}-invitaciones/`,
-          "✅"
+          "✅ Generación Completada",
+          successMessage,
+          result.errors && result.errors.length > 0 ? "⚠️" : "✅"
         );
       }
 
+      // Limpiar formulario después del éxito
       limpiarFormularioInvitaciones();
-    }, 500);
+    } else {
+      throw new Error(result.error || "Error desconocido");
+    }
   } catch (error) {
     console.error("Error al generar invitaciones:", error);
+
+    // Cerrar modal de progreso
+    if (document.body.contains(modalOverlay)) {
+      document.body.removeChild(modalOverlay);
+    }
+
     if (window.UI && window.UI.mostrarModal) {
       window.UI.mostrarModal(
         "❌ Error",
-        `No se pudieron generar las invitaciones.\n\nNota: El backend aún no está implementado. Este es un preview del frontend.\n\nError: ${error.message}`,
+        `No se pudieron generar las invitaciones.\n\nError: ${error.message}`,
         "❌"
       );
     }
   } finally {
-    if (progressContainer) {
-      setTimeout(() => {
-        progressContainer.style.display = "none";
-        if (progressFill) progressFill.style.width = "0%";
-        if (progressText) progressText.textContent = "Generando... 0%";
-      }, 3000);
-    }
+    // ============= DESBLOQUEAR TODA LA UI =============
+    // Restaurar navegación
+    navButtons.forEach((btn) => (btn.disabled = false));
+
+    // Restaurar todos los inputs y botones a su estado original
+    allInputs.forEach((el) => {
+      if (el.dataset.wasDisabled === "false") {
+        el.disabled = false;
+      }
+      delete el.dataset.wasDisabled;
+    });
+
     if (btnGenerar) btnGenerar.disabled = false;
   }
 }
@@ -531,15 +445,15 @@ function limpiarFormularioInvitaciones() {
     if (el) el.value = "";
   });
 
-  // Limpiar archivos PDF
-  ["file-plantilla-doc", "file-convocatoria", "file-cronograma"].forEach(
+  // Limpiar archivos
+  ["file-plantilla-docx", "file-convocatoria", "file-cronograma"].forEach(
     (id) => {
       const el = document.getElementById(id);
       if (el) el.value = "";
     }
   );
 
-  ["status-plantilla-doc", "status-convocatoria", "status-cronograma"].forEach(
+  ["status-plantilla-docx", "status-convocatoria", "status-cronograma"].forEach(
     (id) => {
       const el = document.getElementById(id);
       if (el) {
@@ -550,22 +464,12 @@ function limpiarFormularioInvitaciones() {
   );
 
   // Resetear estado
-  invitacionesState = {
-    archivos: {
-      plantillaDoc: null,
-      convocatoria: null,
-      cronograma: null,
-    },
-    invitadosSeleccionados:
-      window.InvitadosLista && window.InvitadosLista.obtenerInvitados
-        ? window.InvitadosLista.obtenerInvitados()
-        : [],
-    zoomLevel: 100,
-    previewIndex: 0,
+  invitacionesState.archivos = {
+    plantillaDocx: null,
+    convocatoria: null,
+    cronograma: null,
   };
-
-  // Actualizar preview
-  actualizarPreview();
+  invitacionesState.archivosSubidos = false;
 }
 
 // Exportar para uso global

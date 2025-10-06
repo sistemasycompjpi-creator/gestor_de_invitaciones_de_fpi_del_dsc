@@ -78,6 +78,14 @@ El frontend fue refactorizado de un script monolítico a **8 módulos especializ
 | **Mantenibilidad** | Baja | Alta | +80% |
 | **Escalabilidad** | Limitada | Excelente | +90% |
 
+### Implementación de Generación de PDF
+
+El backend ahora cuenta con la lógica necesaria para generar los dossieres de invitación. Los cambios clave incluyen:
+
+-   **Nuevas Dependencias**: Se añadieron `PyMuPDF`, `python-docx-template`, `docx2pdf` y `pypdf` para la manipulación de documentos.
+-   **Nuevo Módulo**: `document_generator.py` contiene el pipeline para renderizar la plantilla `.docx`, convertirla a `.pdf` y unirla con los anexos.
+-   **Nuevos Endpoints**: Se crearon las rutas `/api/upload-assets`, `/api/generate-all-invitations` y `/api/preview-invitation` para orquestar el proceso.
+
 </details>
 
 ---

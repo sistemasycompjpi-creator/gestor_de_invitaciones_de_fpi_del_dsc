@@ -37,7 +37,8 @@ El backend es un microservidor construido en Python que expone una API REST para
 -   **Tecnologías**: Flask, Flask-SQLAlchemy, Flask-CORS.
 -   **Ubicación**: `backend/`
 -   **Archivos Clave**:
-    -   `main.py`: Define el modelo de datos `Invitado` y todos los endpoints de la API para el CRUD y los filtros.
+    -   `main.py`: Define el modelo de datos `Invitado` y todos los endpoints de la API.
+    -   `document_generator.py`: Contiene la lógica para manipular y generar los documentos PDF finales.
     -   `db.sqlite`: Archivo de la base de datos SQLite.
 
 *Para más detalles, consulta la **Referencia de la API**.* 
