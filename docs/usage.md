@@ -1,33 +1,72 @@
-# Guía de Uso
+# 📖 Guía de Uso
 
-Sigue estos pasos para instalar y utilizar el Gestor de Invitaciones JPi.
+Esta guía describe cómo utilizar el Gestor de Invitaciones JPi para administrar invitados y generar la documentación necesaria para el evento.
 
-## Instalación y Ejecución
+## 🚀 Primeros Pasos
 
-1.  **Requisitos**: Asegúrate de tener **Node.js** (v14+) y **Python** (v3.8+) instalados.
-2.  **Instala dependencias**: En la carpeta raíz del proyecto, ejecuta `npm install`.
-3.  **Inicia la aplicación**: Ejecuta `npm start`.
+La aplicación está diseñada para ser intuitiva. La navegación principal se encuentra en la barra superior, permitiendo cambiar entre las siguientes secciones:
 
----
+-   **Lista de Invitados**: Ver y filtrar todos los invitados registrados.
+-   **Agregar Invitado**: Crear un nuevo registro de invitado.
+-   **Generar Invitaciones**: Crear los dossieres en PDF.
+-   **Estadísticas**: Ver un resumen de los roles de los invitados.
+-   **Importar/Exportar**: Gestionar datos de forma masiva.
 
-## Funcionalidades
+## 👥 Gestión de Invitados
 
-### Gestión de Invitados
+La gestión de invitados es el núcleo de la aplicación.
 
--   **Agregar/Editar/Eliminar**: Administra la lista de invitados desde las pestañas "Agregar Invitado" y "Lista de Invitados".
--   **Filtrar**: Usa los botones de filtro para encontrar invitados por su rol específico.
+### Agregar o Editar un Invitado
 
-### Generación de Invitaciones
+1.  Navega a la sección **"➕ Agregar Invitado"**.
+2.  Completa los campos del formulario. Los campos marcados con `*` son obligatorios.
+    -   **Puesto e Institución**: Ingresa el cargo completo (`Jefe del Departamento de Sistemas`) y la institución (`Instituto Tecnológico de Morelia`) en sus respectivos campos.
+    -   **Abreviación**: Proporciona una abreviatura (ej. `ITM`) para generar nombres de archivo más cortos.
+    -   **Invitado Especial**: Marca esta casilla si el invitado es una autoridad o una figura destacada.
+    -   **Roles de Asesoría**: Selecciona si el invitado es asesor de Taller 1 o Taller 2. Los roles de jurado se calcularán automáticamente.
+3.  Haz clic en **"✅ Guardar Invitado"**.
 
-La pestaña **"Generar Invitaciones"** te permite crear los dossieres completos en formato PDF.
+Para editar, simplemente haz clic en el botón **"✏️ Editar"** de un invitado en la lista, y el formulario se llenará con sus datos.
 
-**Flujo de trabajo:**
+### Filtrar Invitados
 
-1.  **Cargar Archivos Base**: Sube los tres documentos requeridos: la plantilla de la carta (`.docx`), la convocatoria (`.pdf`) y el cronograma (`.pdf`). Haz clic en **"⬆️ Cargar Archivos"** para enviarlos al servidor.
-2.  **Completar Datos del Evento**: Rellena la información del evento, como el año, periodo y fechas.
-3.  **Previsualizar (Opcional)**: Selecciona un invitado de la lista desplegable para generar una vista previa en imagen de cómo se verá su invitación.
-4.  **Generar Invitaciones**: Haz clic en el botón **"Generar Todas las Invitaciones"**. El sistema creará un dossier en PDF para cada invitado registrado y lo guardará en una nueva carpeta en tu Escritorio (ej. `~/Desktop/2025.1-invitaciones/`).
+En la sección **"👥 Lista de Invitados"**, puedes usar los botones de filtro para encontrar rápidamente a los invitados según su rol (Asesor T1, Jurado de Protocolo, etc.).
 
-### Estadísticas
+## 📄 Generación de Invitaciones
 
-La pestaña **"Estadísticas"** ofrece un resumen visual del número total de invitados y su distribución por roles.
+Esta sección te permite crear los dossieres completos en formato PDF para los invitados.
+
+El flujo de trabajo consta de 4 pasos principales:
+
+1.  **Paso 1: Cargar Archivos Base**
+    -   Selecciona los tres documentos requeridos:
+        -   Una **plantilla de carta en formato `.docx`** que contenga variables (ej. `{{ nombre_completo }}`).
+        -   El **PDF de la convocatoria** del evento.
+        -   El **PDF del cronograma y croquis**.
+    -   Haz clic en **"⬆️ Cargar Archivos al Servidor"**. El sistema confirmará la carga exitosa.
+
+2.  **Paso 2: Configurar el Periodo**
+    -   Define el año y el periodo académico del evento (ej. `2025`, `1` para Enero-Junio).
+
+3.  **Paso 3: Información del Evento**
+    -   Completa los detalles que se insertarán en la plantilla, como el mes y año del evento y la fecha de la carta.
+
+4.  **Paso 4: Generar los Documentos**
+    -   **Modo de Generación**: Elige si deseas generar un dossier para **todos** los invitados o solo para **uno** en específico.
+    -   **Carpeta de Destino**: Haz clic en **"Seleccionar Carpeta"** para elegir dónde se guardarán los archivos PDF generados en tu computadora.
+    -   Haz clic en **"🚀 Generar Invitación(es)"**. El sistema procesará la solicitud y guardará los archivos en la ubicación seleccionada.
+
+## 🔄 Importar y Exportar Datos
+
+Esta sección facilita la gestión de datos en volumen.
+
+### Exportar
+
+-   Haz clic en **"📗 Exportar a Excel"** o **"📘 Exportar a CSV"** para descargar la lista completa de invitados registrados.
+
+### Importar
+
+1.  Primero, descarga la plantilla haciendo clic en **"📄 Descargar Plantilla con Instrucciones"**. Este archivo Excel contiene las columnas necesarias y una hoja con explicaciones para cada campo.
+2.  Llena la plantilla con los datos de los invitados que deseas agregar.
+3.  Selecciona el archivo completado usando el botón de selección de archivo.
+4.  Haz clic en **"🚀 Importar Archivo"** para agregar los nuevos registros a la base de datos.
