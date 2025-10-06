@@ -123,14 +123,40 @@ app.whenReady().then(async () => {
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);
 
-  const pythonExecutable = path.join(
-    __dirname,
-    "../backend/venv/Scripts/python.exe"
-  );
-  const backendScript = path.join(__dirname, "../backend/main.py");
+  // --- DETECTAR SI ESTAMOS EN DESARROLLO O EMPAQUETADO ---
+  let pythonExecutable;
+  let backendScript;
+
+  if (app.isPackaged) {
+    // PRODUCCIÓN: La app está empaquetada como .exe
+    // Electron-builder copia todo a la carpeta 'resources'
+    console.log("🚀 Ejecutando en modo PRODUCCIÓN (empaquetado)");
+    pythonExecutable = path.join(
+      process.resourcesPath,
+      "backend/venv/Scripts/python.exe"
+    );
+    backendScript = path.join(process.resourcesPath, "backend/main.py");
+  } else {
+    // DESARROLLO: npm start o electron .
+    console.log("🔧 Ejecutando en modo DESARROLLO");
+    pythonExecutable = path.join(
+      __dirname,
+      "../backend/venv/Scripts/python.exe"
+    );
+    backendScript = path.join(__dirname, "../backend/main.py");
+  }
+
+  console.log(`Python executable: ${pythonExecutable}`);
+  console.log(`Backend script: ${backendScript}`);
+
+  // --- OBTENER RUTA DE DATOS DEL USUARIO ---
+  const userDataPath = app.getPath('userData');
+  console.log(`Ruta de datos del usuario (userData): ${userDataPath}`);
 
   console.log("Iniciando servidor Flask...");
-  backendProcess = spawn(pythonExecutable, [backendScript]);
+
+  // --- PASAR LA RUTA DE DATOS COMO ARGUMENTO AL SCRIPT DE PYTHON ---
+  backendProcess = spawn(pythonExecutable, [backendScript, userDataPath]);
 
   backendProcess.stdout.on("data", (data) => {
     console.log(`Backend stdout: ${data}`);

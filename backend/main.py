@@ -1,4 +1,7 @@
 import os
+import sys
+from pathlib import Path
+import logging
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
@@ -10,13 +13,34 @@ from document_generator import (
     generate_preview_image
 )
 
-basedir = os.path.abspath(os.path.dirname(__file__))
+# --- CONFIGURACIÓN DE RUTAS Y BASE DE DATOS CON LOGGING ---
+# Recibimos la ruta segura para datos desde Electron.
+# Si no se pasa (modo dev), usamos el directorio del script actual.
+if len(sys.argv) > 1:
+    USER_DATA_PATH = Path(sys.argv[1])
+else:
+    USER_DATA_PATH = Path(os.path.abspath(os.path.dirname(__file__)))
+
+# Configuramos el archivo de log en esa misma carpeta segura
+LOG_FILE_PATH = USER_DATA_PATH / 'debug.log'
+logging.basicConfig(
+    filename=str(LOG_FILE_PATH),
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+logging.info("==================================")
+logging.info("INICIANDO SERVIDOR FLASK...")
+logging.info(f"Ruta de datos de usuario recibida: {USER_DATA_PATH}")
+
+# La base de datos vivirá en la carpeta de datos del usuario
+DB_PATH = USER_DATA_PATH / 'db.sqlite'
+logging.info(f"Ruta completa de la base de datos: {DB_PATH}")
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'db.sqlite')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str(DB_PATH)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Inicializamos el ORM
 db = SQLAlchemy(app)
 # Habilitar CORS para permitir peticiones desde el frontend servido por file:// o distinto origen
 CORS(app)
@@ -402,7 +426,20 @@ def preview_invitation(invitado_id):
 
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    
+    try:
+        with app.app_context():
+            logging.info("Contexto de la aplicación creado.")
+            if not DB_PATH.exists():
+                logging.warning("La base de datos NO existe. Se creará ahora.")
+            else:
+                logging.info("La base de datos ya existe.")
+            
+            # Esta línea crea el archivo .sqlite y las tablas si no existen
+            db.create_all()
+            logging.info("db.create_all() ejecutado correctamente.")
+
+    except Exception as e:
+        logging.error(f"!!! ERROR DURANTE LA INICIALIZACIÓN DE LA BD: {e}", exc_info=True)
+
+    logging.info("Iniciando app.run()... El servidor está listo.")
     app.run(debug=True)

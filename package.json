@@ -1,17 +1,64 @@
 {
-  "name": "invitaciones",
+  "name": "invitaciones-jpi",
   "version": "1.0.0",
-  "description": "",
+  "description": "Sistema de Gestión de Invitaciones para la Jornada Politécnica de Investigación",
   "main": "electron-app/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "invitaciones",
+    "jpi",
+    "itm"
+  ],
+  "author": "Joel Josafat Hernández Saucedo",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
     "electron": "^38.2.0",
     "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.jpi.invitaciones",
+    "productName": "Gestor Invitaciones JPi",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron-app/**/*",
+      "frontend/**/*",
+      "assets/**/*",
+      "!backend/venv/Lib/site-packages/pip*/**/*",
+      "!backend/venv/Lib/site-packages/setuptools*/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/venv/Lib/site-packages/pip*/**",
+          "!**/venv/Lib/site-packages/setuptools*/**"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/JPi-fondo-blanco.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Gestor Invitaciones JPi"
+    }
   }
 }
+

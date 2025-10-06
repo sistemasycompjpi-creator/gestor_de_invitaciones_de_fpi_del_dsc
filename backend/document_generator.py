@@ -5,6 +5,7 @@ Genera invitaciones en PDF a partir de plantillas DOCX
 
 import os
 import re
+import sys
 import time
 from pathlib import Path
 import fitz  # PyMuPDF
@@ -14,12 +15,16 @@ from pypdf import PdfWriter
 import pythoncom  # Para inicializar COM en Windows
 
 # --- Rutas de Archivos ---
+# Los assets de lectura se encuentran en el directorio de la aplicación.
 BASE_DIR = Path(__file__).parent
 ASSETS_DIR = BASE_DIR / 'assets'
-TEMP_DIR = BASE_DIR / 'temp_output'
 
-# Crear directorios si no existen
-ASSETS_DIR.mkdir(exist_ok=True)
+# El directorio de escritura para archivos temporales se pasa como argumento.
+# Esto apunta a la carpeta de datos del usuario (ej. AppData en Windows).
+USER_DATA_DIR = Path(sys.argv[1])
+TEMP_DIR = USER_DATA_DIR / 'temp_output'
+
+# Asegurarse de que el directorio temporal exista.
 TEMP_DIR.mkdir(exist_ok=True)
 
 
@@ -28,13 +33,19 @@ def _create_safe_filename(invitado_data, anio, periodo):
     Función interna para crear un nombre de archivo seguro según la nomenclatura.
     Formato: {{año}}.{{periodo}}-FPiT-DOSSIER-{{Abreviación}}-{{Nombre}}
     """
-    nombre_seguro = re.sub(r'[\\/*?:"<>|]', "", invitado_data.get('nombre_completo', ''))
-    # Usar abreviación si existe, sino usar organización completa
-    org_segura = invitado_data.get('abreviacion_org_1') or invitado_data.get('organizacion_1') or 'INVITADO'
-    org_segura = re.sub(r'[\\/*?:"<>|]', "", org_segura)
+    # 1. Limpiar caracteres inválidos
+    nombre_limpio = re.sub(r'[\\/*?:"<>|]', "", invitado_data.get('nombre_completo', ''))
+    
+    # 2. Usar abreviación si existe, sino usar organización completa
+    org_limpia = invitado_data.get('abreviacion_org_1') or invitado_data.get('organizacion_1') or 'INVITADO'
+    org_limpia = re.sub(r'[\\/*?:"<>|]', "", org_limpia)
+    
+    # 3. Reemplazar espacios con guiones bajos para una mejor legibilidad
+    nombre_final = nombre_limpio.replace(" ", "_")
+    org_final = org_limpia.replace(" ", "_")
     
     # Nomenclatura: {{año}}.{{periodo}}-FPiT-DOSSIER-{{Abreviación}}-{{Nombre}}
-    return f"{anio}.{periodo}-FPiT-DOSSIER-{org_segura}-{nombre_seguro}.pdf"
+    return f"{anio}.{periodo}-FPiT-DOSSIER-{org_final}-{nombre_final}.pdf"
 
 
 def _render_template(invitado_data, context_general):
