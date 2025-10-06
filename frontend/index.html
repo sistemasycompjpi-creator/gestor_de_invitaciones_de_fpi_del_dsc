@@ -47,6 +47,9 @@
           <button class="nav-item" data-page="estadisticas">
             📊 Estadísticas
           </button>
+          <button class="nav-item" data-page="importar-exportar">
+            🔄 Importar/Exportar
+          </button>
         </div>
       </nav>
 
@@ -601,6 +604,50 @@
             </div>
           </section>
         </div>
+        <div class="page" id="page-importar-exportar">
+          <div class="page-header">
+            <h2>🔄 Importar y Exportar Datos</h2>
+          </div>
+
+          <div class="import-export-grid">
+            <!-- Sección de Importación -->
+            <section class="panel-section">
+              <h3>📥 Importar Invitados</h3>
+              <p class="section-hint">
+                Sube un archivo Excel (.xlsx) o CSV (.csv) para agregar invitados en masa.
+              </p>
+              
+              <div class="form-group">
+                <label>Paso 1: Descarga la plantilla para asegurar el formato correcto.</label>
+                <button class="btn btn-secondary" id="btn-generar-plantilla">📄 Descargar Plantilla Excel</button>
+              </div>
+
+              <div class="form-group">
+                <label for="input-file-import">Paso 2: Selecciona el archivo a importar.</label>
+                <input type="file" id="input-file-import" accept=".xlsx, .xls, .csv" />
+              </div>
+
+              <div class="form-actions">
+                <button class="btn btn-primary" id="btn-importar-archivo">🚀 Importar Archivo</button>
+              </div>
+              
+              <div id="import-feedback" style="display: none; margin-top: 15px; padding: 10px; border-radius: 5px;"></div>
+            </section>
+
+            <!-- Sección de Exportación -->
+            <section class="panel-section">
+              <h3>📤 Exportar Invitados</h3>
+              <p class="section-hint">
+                Descarga la lista completa de invitados registrados en el formato que prefieras.
+              </p>
+              <div class="form-actions-export">
+                <button class="btn btn-success" id="btn-exportar-excel">📗 Exportar a Excel</button>
+                <button class="btn btn-info" id="btn-exportar-csv">📘 Exportar a CSV</button>
+              </div>
+            </section>
+          </div>
+        </div>
+
       </main>
     </div>
 
@@ -626,6 +673,7 @@
     <script src="./js/invitados-lista.js"></script>
     <script src="./js/invitados-form.js"></script>
     <script src="./js/invitaciones.js"></script>
+    <script src="./js/import-export.js"></script>
     <script src="./js/main.js"></script>
   </body>
 </html>

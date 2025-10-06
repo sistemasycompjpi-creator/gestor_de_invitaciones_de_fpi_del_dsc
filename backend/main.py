@@ -427,6 +427,161 @@ def preview_invitation(invitado_id):
         return jsonify({'error': 'No se pudo generar la vista previa'}), 500
 
 
+import pandas as pd
+import io
+
+### Rutas para Importación y Exportación ###
+
+# Definir las columnas para la plantilla y la importación/exportación
+# Deben coincidir con los campos del modelo, excluyendo 'id'
+TEMPLATE_COLUMNS = [
+    'nombre_completo',
+    'caracter_invitacion',
+    'nota',
+    'puesto_completo',
+    'institucion',
+    'abreviacion_org',
+    'es_invitado_especial',
+    'es_asesor_t1',
+    'es_asesor_t2'
+]
+
+@app.route('/api/invitados/plantilla', methods=['GET'])
+def descargar_plantilla():
+    """Genera y sirve una plantilla de Excel vacía para la importación de invitados."""
+    try:
+        df = pd.DataFrame(columns=TEMPLATE_COLUMNS)
+        
+        # Crear un buffer de bytes en memoria para el archivo Excel
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Invitados')
+        output.seek(0)
+        
+        logging.info("Se ha generado y enviado la plantilla de Excel para invitados.")
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name='plantilla_invitados.xlsx'
+        )
+    except Exception as e:
+        logging.error(f"Error al generar la plantilla de Excel: {e}", exc_info=True)
+        return jsonify({'error': f'No se pudo generar la plantilla: {e}'}), 500
+
+
+@app.route('/api/invitados/exportar', methods=['GET'])
+def exportar_invitados():
+    """Exporta todos los invitados a un archivo Excel o CSV."""
+    formato = request.args.get('formato', 'excel').lower()
+    
+    try:
+        invitados = Invitado.query.all()
+        if not invitados:
+            return jsonify({'error': 'No hay invitados para exportar'}), 404
+
+        # Convertir lista de objetos a diccionarios y luego a DataFrame
+        datos_invitados = [invitado.to_dict() for invitado in invitados]
+        df = pd.DataFrame(datos_invitados)
+        
+        # Usar las columnas definidas para asegurar el orden y la consistencia
+        # El método to_dict() ya incluye los campos computados de jurado
+        export_columns = TEMPLATE_COLUMNS + ['puede_ser_jurado_protocolo', 'puede_ser_jurado_informe']
+        df = df[export_columns]
+
+        output = io.BytesIO()
+        
+        if formato == 'excel':
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name='Invitados')
+            mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            filename = 'exportacion_invitados.xlsx'
+        elif formato == 'csv':
+            df.to_csv(output, index=False, encoding='utf-8')
+            mimetype = 'text/csv'
+            filename = 'exportacion_invitados.csv'
+        else:
+            return jsonify({'error': 'Formato no soportado. Use \'excel\' o \'csv\'.'}), 400
+
+        output.seek(0)
+        logging.info(f"Se han exportado {len(invitados)} invitados a formato {formato}.")
+
+        return send_file(
+            output,
+            mimetype=mimetype,
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except Exception as e:
+        logging.error(f"Error al exportar invitados: {e}", exc_info=True)
+        return jsonify({'error': f'No se pudo completar la exportación: {e}'}), 500
+
+
+@app.route('/api/invitados/importar', methods=['POST'])
+def importar_invitados():
+    """Importa invitados desde un archivo Excel o CSV."""
+    if 'file' not in request.files:
+        return jsonify({'error': 'No se encontró ningún archivo en la solicitud'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No se seleccionó ningún archivo'}), 400
+
+    try:
+        filename = secure_filename(file.filename)
+        if filename.endswith('.xlsx') or filename.endswith('.xls'):
+            df = pd.read_excel(file, engine='openpyxl')
+        elif filename.endswith('.csv'):
+            df = pd.read_csv(file)
+        else:
+            return jsonify({'error': 'Formato de archivo no soportado. Use .xlsx, .xls o .csv'}), 400
+
+        # Limpiar nombres de columnas (quitar espacios, a minúsculas)
+        df.columns = df.columns.str.strip().str.lower()
+
+        # Función para convertir valores a booleano de forma flexible
+        def to_bool(value):
+            if pd.isna(value):
+                return False
+            if isinstance(value, bool):
+                return value
+            return str(value).lower() in ['true', '1', 't', 'y', 'yes', 'si', 'verdadero']
+
+        nuevos_invitados = []
+        for index, row in df.iterrows():
+            # Validar que los campos requeridos no estén vacíos
+            if pd.isna(row.get('nombre_completo')) or pd.isna(row.get('caracter_invitacion')):
+                logging.warning(f"Omitiendo fila {index+2} por falta de datos requeridos.")
+                continue
+
+            invitado = Invitado(
+                nombre_completo=row.get('nombre_completo'),
+                caracter_invitacion=row.get('caracter_invitacion'),
+                nota=row.get('nota') if pd.notna(row.get('nota')) else None,
+                puesto_completo=row.get('puesto_completo') if pd.notna(row.get('puesto_completo')) else None,
+                institucion=row.get('institucion') if pd.notna(row.get('institucion')) else None,
+                abreviacion_org=row.get('abreviacion_org') if pd.notna(row.get('abreviacion_org')) else None,
+                es_invitado_especial=to_bool(row.get('es_invitado_especial')),
+                es_asesor_t1=to_bool(row.get('es_asesor_t1')),
+                es_asesor_t2=to_bool(row.get('es_asesor_t2')),
+            )
+            invitado.compute_jurado_flags() # Calcular flags de jurado
+            nuevos_invitados.append(invitado)
+
+        if nuevos_invitados:
+            db.session.add_all(nuevos_invitados)
+            db.session.commit()
+            logging.info(f"Se han importado {len(nuevos_invitados)} nuevos invitados.")
+        
+        return jsonify({'message': f'Importación completada. Se agregaron {len(nuevos_invitados)} invitados.'}), 201
+
+    except Exception as e:
+        logging.error(f"Error durante la importación de archivo: {e}", exc_info=True)
+        return jsonify({'error': f'Ocurrió un error al procesar el archivo: {e}'}), 500
+
+
 if __name__ == '__main__':
     try:
         with app.app_context():

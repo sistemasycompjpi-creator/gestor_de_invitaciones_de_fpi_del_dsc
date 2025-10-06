@@ -1,5 +1,6 @@
-const { app, BrowserWindow, Menu, shell } = require("electron");
+const { app, BrowserWindow, Menu, shell, ipcMain } = require("electron");
 const path = require("path");
+const fs = require("fs");
 const { spawn } = require("child_process");
 const http = require("http");
 
@@ -42,6 +43,7 @@ const menuTemplate = [
               // especialmente al cargar contenido remoto o local.
               nodeIntegration: false,
               contextIsolation: true,
+              preload: path.join(__dirname, "preload-docs.js"), // Cargar el script de precarga
             },
           });
 
@@ -119,6 +121,26 @@ function checkBackendReady(url, maxRetries = 30, interval = 500) {
 }
 
 app.whenReady().then(async () => {
+  // --- MANEJADOR PARA CARGAR ARCHIVOS MARKDOWN ---
+  ipcMain.handle("load-markdown", async (event, page) => {
+    try {
+      const basePath = app.isPackaged
+        ? path.join(process.resourcesPath, "docs")
+        : path.join(__dirname, "..", "docs");
+
+      const filePath = path.join(basePath, `${page}.md`);
+      const content = await fs.promises.readFile(filePath, "utf-8");
+      return content;
+    } catch (error) {
+      console.error(`Error loading markdown file: ${page}.md`, error);
+      return `# Error
+
+Could not load file: ${page}.md
+
+${error.message}`;
+    }
+  });
+
   // Construir y establecer el menú
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);

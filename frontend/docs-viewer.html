@@ -12,13 +12,25 @@
     <div id="sidebar">
       <h2>Documentación</h2>
       <ul>
-        <li><a href="#" data-page="index">Introducción</a></li>
+        <li><a href="#" data-page="README">Introducción (README)</a></li>
         <li><a href="#" data-page="architecture">Arquitectura</a></li>
         <li><a href="#" data-page="usage">Guía de Uso</a></li>
         <li><a href="#" data-page="api">Referencia de API</a></li>
         <li><a href="#" data-page="development">Guía de Desarrollo</a></li>
         <li><a href="#" data-page="testing">Guía de Pruebas</a></li>
         <li><a href="#" data-page="changelog">Registro de Cambios</a></li>
+        <hr />
+        <li>
+          <a href="#" data-page="CAMBIO_MODELO_SIMPLIFICADO"
+            >Cambio Modelo Simplificado</a
+          >
+        </li>
+        <li>
+          <a href="#" data-page="COMO_EJECUTAR_MIGRACION">Ejecutar Migración</a>
+        </li>
+        <li>
+          <a href="#" data-page="GUIA_PLANTILLA_DOCX">Guía Plantilla DOCX</a>
+        </li>
       </ul>
     </div>
     <div id="content"></div>
@@ -30,14 +42,12 @@
       // Función para cargar y renderizar un archivo Markdown
       async function loadMarkdown(page) {
         try {
-          const response = await fetch(`../docs/${page}.md`);
-          if (!response.ok) {
-            throw new Error(`No se pudo cargar el archivo ${page}.md`);
-          }
-          const markdown = await response.text();
+          // Usar la API expuesta por el preload script
+          const markdown = await window.electronAPI.loadMarkdown(page);
           contentDiv.innerHTML = marked.parse(markdown);
         } catch (error) {
-          contentDiv.innerHTML = `<h1>Error</h1><p>${error.message}</p>`;
+          console.error("Error loading markdown:", error);
+          contentDiv.innerHTML = `<h1>Error</h1><p>No se pudo cargar el archivo ${page}.md</p><p>${error.message}</p>`;
         }
       }
 
@@ -48,16 +58,15 @@
           const page = link.dataset.page;
 
           // Actualizar clase activa
-          navLinks.forEach(l => l.classList.remove('active'));
-          link.classList.add('active');
+          navLinks.forEach((l) => l.classList.remove("active"));
+          link.classList.add("active");
 
           loadMarkdown(page);
         });
       });
 
       // Cargar la página de introducción por defecto
-      document.querySelector('[data-page="index"]').click();
-
+      document.querySelector('[data-page="README"]').click();
     </script>
   </body>
 </html>

@@ -75,6 +75,13 @@ function onCambioPagina(nombrePagina) {
         }, 100);
       }
       break;
+
+    case "importar-exportar":
+      // Inicializar módulo de importación/exportación
+      if (window.ImportExport && window.ImportExport.inicializar) {
+        window.ImportExport.inicializar();
+      }
+      break;
   }
 }
 
