@@ -9,6 +9,7 @@ let invitacionesState = {
     cronograma: null,
   },
   archivosSubidos: false,
+  generationMode: 'todos', // 'todos' o 'individual'
 };
 
 /**
@@ -18,6 +19,8 @@ function inicializarInvitaciones() {
   configurarSubidaArchivos();
   configurarGeneracion();
   configurarPeriodo();
+  configurarModoGeneracion();
+  cargarInvitadosParaSelector();
 }
 
 /**
@@ -218,221 +221,68 @@ function actualizarFolderName() {
  * Genera las invitaciones llamando al backend
  */
 async function generarInvitaciones() {
-  // Obtener valores de los campos
-  const periodoAnio = document.getElementById("periodo-anio")?.value;
-  const periodoNumero = document.getElementById("periodo-numero")?.value;
-  const edicionEvento = document.getElementById("edicion-evento")?.value;
-  const fechaEvento = document.getElementById("fecha-evento")?.value;
-  const fechaCarta = document.getElementById("fecha-carta")?.value;
-
-  // Validaciones
-  if (!periodoAnio || !periodoNumero) {
-    if (window.UI && window.UI.mostrarModal) {
-      window.UI.mostrarModal(
-        "⚠️ Campos Incompletos",
-        "Por favor configura el año y periodo.",
-        "⚠️"
-      );
-    }
-    return;
-  }
-
-  if (!edicionEvento || !fechaEvento || !fechaCarta) {
-    if (window.UI && window.UI.mostrarModal) {
-      window.UI.mostrarModal(
-        "⚠️ Campos Incompletos",
-        "Por favor completa todos los campos requeridos del evento.",
-        "⚠️"
-      );
-    }
-    return;
-  }
-
+  // 1. Validar estado y campos
   if (!invitacionesState.archivosSubidos) {
-    if (window.UI && window.UI.mostrarModal) {
-      window.UI.mostrarModal(
-        "⚠️ Archivos no cargados",
-        "Primero debes cargar los archivos base usando el botón '⬆️ Cargar Archivos'.",
-        "⚠️"
-      );
-    }
-    return;
+    return window.UI.mostrarModal("⚠️ Archivos no cargados", "Primero debes cargar los archivos base.", "⚠️");
   }
 
+  const eventData = {
+    anio: document.getElementById("periodo-anio").value,
+    periodo: document.getElementById("periodo-numero").value,
+    edicion_evento: document.getElementById("edicion-evento").value,
+    fecha_evento: document.getElementById("fecha-evento").value,
+    fecha_carta: document.getElementById("fecha-carta").value,
+  };
+
+  if (!eventData.anio || !eventData.periodo || !eventData.edicion_evento || !eventData.fecha_evento || !eventData.fecha_carta) {
+    return window.UI.mostrarModal("⚠️ Campos Incompletos", "Por favor completa todos los campos de configuración del evento.", "⚠️");
+  }
+
+  let invitadoId = null;
+  if (invitacionesState.generationMode === 'individual') {
+    invitadoId = document.getElementById('invitado-selector').value;
+    if (!invitadoId) {
+      return window.UI.mostrarModal("⚠️ Invitado no seleccionado", "Por favor selecciona un invitado de la lista.", "⚠️");
+    }
+  }
+
+  // 2. Bloquear UI y mostrar progreso
   const btnGenerar = document.getElementById("btn-generar");
-  if (btnGenerar) btnGenerar.disabled = true;
-
-  // ============= BLOQUEAR TODA LA UI =============
-  // Deshabilitar navegación
-  const navButtons = document.querySelectorAll(".nav-item");
-  navButtons.forEach((btn) => (btn.disabled = true));
-
-  // Deshabilitar todos los inputs y botones de la página
-  const allInputs = document.querySelectorAll(
-    "input, button, select, textarea"
-  );
-  allInputs.forEach((el) => {
-    el.dataset.wasDisabled = el.disabled ? "true" : "false";
-    el.disabled = true;
-  });
-
-  // Crear modal de progreso animado CON z-index alto para bloquear todo
-  const modalOverlay = document.createElement("div");
-  modalOverlay.className = "modal-overlay";
-  modalOverlay.style.zIndex = "99999"; // Asegurar que esté por encima de todo
-  modalOverlay.style.pointerEvents = "all"; // Bloquear clicks
-  modalOverlay.innerHTML = `
-    <div class="modal-progress">
-      <div class="modal-header-progress">
-        <h3>🚀 Generando Invitaciones</h3>
-        <p style="font-size: 14px; color: #666; margin-top: 10px;">
-          ⚠️ No cierres esta ventana ni cambies de pestaña
-        </p>
-      </div>
-      <div class="modal-body-progress">
-        <div class="progress-spinner"></div>
-        <p class="progress-status" id="progress-status-text">Preparando generación...</p>
-        <div class="progress-bar-large">
-          <div class="progress-fill-large" id="progress-fill-large"></div>
-        </div>
-        <p class="progress-percentage" id="progress-percentage">0%</p>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(modalOverlay);
-  modalOverlay.classList.add("show");
-
-  const statusText = document.getElementById("progress-status-text");
-  const progressFill = document.getElementById("progress-fill-large");
-  const progressPercentage = document.getElementById("progress-percentage");
+  btnGenerar.disabled = true;
+  
+  const progressOverlay = document.createElement('div');
+  progressOverlay.className = 'progress-overlay';
+  progressOverlay.innerHTML = '<div class="progress-spinner"></div><p>Generando, por favor espera...</p>';
+  document.body.appendChild(progressOverlay);
 
   try {
-    // Preparar datos del evento
-    const eventData = {
-      anio: periodoAnio,
-      periodo: periodoNumero,
-      edicion_evento: edicionEvento,
-      fecha_evento: fechaEvento,
-      fecha_carta: fechaCarta,
-    };
-
-    // Animar progreso inicial
-    setTimeout(() => {
-      statusText.textContent = "📤 Enviando datos al servidor...";
-      progressFill.style.width = "20%";
-      progressPercentage.textContent = "20%";
-    }, 300);
-
-    // Llamar al backend
-    const response = await fetch(
-      "http://127.0.0.1:5000/api/generate-all-invitations",
-      {
+    let result;
+    if (invitacionesState.generationMode === 'individual') {
+      result = await window.API.generateSingleInvitation(invitadoId, eventData);
+    } else {
+      const response = await fetch("http://127.0.0.1:5000/api/generate-all-invitations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(eventData),
-      }
-    );
-
-    // Animar progreso medio
-    statusText.textContent = "📝 Procesando plantillas...";
-    progressFill.style.width = "50%";
-    progressPercentage.textContent = "50%";
-
-    const result = await response.json();
-
-    // Animar progreso avanzado
-    statusText.textContent = "📄 Generando PDFs...";
-    progressFill.style.width = "80%";
-    progressPercentage.textContent = "80%";
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    if (result.success) {
-      // Completar progreso
-      statusText.textContent = "✅ ¡Completado!";
-      progressFill.style.width = "100%";
-      progressPercentage.textContent = "100%";
-
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // Cerrar modal de progreso
-      document.body.removeChild(modalOverlay);
-
-      // Mostrar modal de éxito con detalles
-      const successMessage = `
-        <div style="text-align: left;">
-          <p style="font-size: 18px; margin-bottom: 15px;">
-            ✅ <strong>${
-              result.generated_count || result.count || 0
-            } invitaciones generadas exitosamente</strong>
-          </p>
-          <p style="margin: 10px 0;">
-            📂 <strong>Ubicación:</strong><br>
-            <code style="background: #f0f0f0; padding: 5px 10px; border-radius: 4px; display: inline-block; margin-top: 5px;">
-              ~/Desktop/${periodoAnio}.${periodoNumero}-invitaciones/
-            </code>
-          </p>
-          <p style="margin: 10px 0;">
-            🎯 <strong>Nomenclatura:</strong><br>
-            <code style="font-size: 12px;">${periodoAnio}.${periodoNumero}-FPiT-DOSSIER-[Org]-[Nombre].pdf</code>
-          </p>
-          ${
-            result.errors && result.errors.length > 0
-              ? `
-          <p style="margin-top: 15px; color: #ff9800;">
-            ⚠️ <strong>Errores encontrados:</strong><br>
-            ${result.errors
-              .map((err) => `• ${err.invitado}: ${err.error}`)
-              .join("<br>")}
-          </p>
-          `
-              : ""
-          }
-        </div>
-      `;
-
-      if (window.UI && window.UI.mostrarModal) {
-        window.UI.mostrarModal(
-          "✅ Generación Completada",
-          successMessage,
-          result.errors && result.errors.length > 0 ? "⚠️" : "✅"
-        );
-      }
-
-      // Limpiar formulario después del éxito
-      limpiarFormularioInvitaciones();
-    } else {
-      throw new Error(result.error || "Error desconocido");
+      });
+      result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Error en el servidor');
     }
+
+    const successMessage = `
+      <div style="text-align: left;">
+        <p style="font-size: 18px; margin-bottom: 15px;">✅ <strong>${result.message}</strong></p>
+        <p style="margin: 10px 0;"><strong>📂 Ubicación:</strong><br><code class="code-block">${result.output_folder}</code></p>
+      </div>`;
+    window.UI.mostrarModal("✅ Generación Completada", successMessage, "✅");
+
   } catch (error) {
     console.error("Error al generar invitaciones:", error);
-
-    // Cerrar modal de progreso
-    if (document.body.contains(modalOverlay)) {
-      document.body.removeChild(modalOverlay);
-    }
-
-    if (window.UI && window.UI.mostrarModal) {
-      window.UI.mostrarModal(
-        "❌ Error",
-        `No se pudieron generar las invitaciones.\n\nError: ${error.message}`,
-        "❌"
-      );
-    }
+    window.UI.mostrarModal("❌ Error de Generación", `No se pudieron generar las invitaciones: ${error.message}`, "❌");
   } finally {
-    // ============= DESBLOQUEAR TODA LA UI =============
-    // Restaurar navegación
-    navButtons.forEach((btn) => (btn.disabled = false));
-
-    // Restaurar todos los inputs y botones a su estado original
-    allInputs.forEach((el) => {
-      if (el.dataset.wasDisabled === "false") {
-        el.disabled = false;
-      }
-      delete el.dataset.wasDisabled;
-    });
-
-    if (btnGenerar) btnGenerar.disabled = false;
+    // 5. Desbloquear UI
+    btnGenerar.disabled = false;
+    document.body.removeChild(progressOverlay);
   }
 }
 
@@ -471,6 +321,39 @@ function limpiarFormularioInvitaciones() {
     cronograma: null,
   };
   invitacionesState.archivosSubidos = false;
+}
+
+/**
+ * Configura los radio buttons para elegir el modo de generación
+ */
+function configurarModoGeneracion() {
+  document.querySelectorAll('input[name="generation-type"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      invitacionesState.generationMode = e.target.value;
+      const selectorContainer = document.getElementById('invitado-selector-container');
+      selectorContainer.classList.toggle('hidden', invitacionesState.generationMode !== 'individual');
+    });
+  });
+}
+
+/**
+ * Carga la lista de invitados en el selector
+ */
+async function cargarInvitadosParaSelector() {
+  const selector = document.getElementById('invitado-selector');
+  try {
+    const invitados = await window.API.obtenerInvitados();
+    selector.innerHTML = '<option value="">-- Selecciona un invitado --</option>'; // Opción por defecto
+    invitados.forEach(inv => {
+      const option = document.createElement('option');
+      option.value = inv.id;
+      option.textContent = `${inv.nombre_completo} (ID: ${inv.id})`;
+      selector.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error cargando invitados para el selector:", error);
+    selector.innerHTML = '<option value="">Error al cargar invitados</option>';
+  }
 }
 
 // Exportar para uso global

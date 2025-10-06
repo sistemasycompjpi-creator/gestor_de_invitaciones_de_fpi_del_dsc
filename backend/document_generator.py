@@ -39,22 +39,22 @@ def get_asset_path(filename):
 
 def _create_safe_filename(invitado_data, anio, periodo):
     """
-    Función interna para crear un nombre de archivo seguro según la nomenclatura.
-    Formato: {{año}}.{{periodo}}-FPiT-DOSSIER-{{Abreviación}}-{{Nombre}}
-    Si no hay abreviación: {{año}}.{{periodo}}-FPiT-DOSSIER-{{Nombre}}
+    Función interna para crear un nombre de archivo seguro, truncando nombres largos.
     """
-    # 1. Limpiar caracteres inválidos del nombre
-    nombre_limpio = re.sub(r'[\\/*?:"<>|]', "", invitado_data.get('nombre_completo', 'INVITADO'))
-    
-    # 2. Si hay abreviación, usarla en el nombre del archivo
+    # 1. Limpiar caracteres inválidos y truncar para evitar rutas demasiado largas
+    nombre_original = invitado_data.get('nombre_completo', 'INVITADO')
+    nombre_limpio = re.sub(r'[\\/*?:"<>|]', "", nombre_original)
+    nombre_truncado = nombre_limpio[:50]  # Truncar a 50 caracteres
+
+    # 2. Limpiar abreviación
     abreviacion = invitado_data.get('abreviacion_org', '')
-    
-    # 3. Reemplazar espacios con guiones bajos para una mejor legibilidad
-    nombre_final = nombre_limpio.replace(" ", "_")
-    
-    # 4. Crear nomenclatura con o sin abreviación
-    if abreviacion:
-        abrev_limpia = re.sub(r'[\\/*?:"<>|]', "", abreviacion).replace(" ", "_")
+    abrev_limpia = re.sub(r'[\\/*?:"<>|]', "", abreviacion).replace(" ", "_")
+
+    # 3. Reemplazar espacios con guiones bajos
+    nombre_final = nombre_truncado.replace(" ", "_")
+
+    # 4. Crear nomenclatura
+    if abrev_limpia:
         return f"{anio}.{periodo}-FPiT-DOSSIER-{abrev_limpia}-{nombre_final}.pdf"
     else:
         return f"{anio}.{periodo}-FPiT-DOSSIER-{nombre_final}.pdf"
