@@ -1,21 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Documentation</title>
+    <title>Documentación</title>
     <link rel="stylesheet" href="styles/docs-style.css" />
     <!-- Incluir la librería marked desde un CDN -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   </head>
   <body>
     <div id="sidebar">
-      <h2>Documentation</h2>
+      <h2>Documentación</h2>
       <ul>
-        <li><a href="#" data-page="index">Introduction</a></li>
-        <li><a href="#" data-page="architecture">Architecture</a></li>
-        <li><a href="#" data-page="usage">User Guide</a></li>
-        <li><a href="#" data-page="api">API Reference</a></li>
+        <li><a href="#" data-page="index">Introducción</a></li>
+        <li><a href="#" data-page="architecture">Arquitectura</a></li>
+        <li><a href="#" data-page="usage">Guía de Uso</a></li>
+        <li><a href="#" data-page="api">Referencia de API</a></li>
+        <li><a href="#" data-page="development">Guía de Desarrollo</a></li>
       </ul>
     </div>
     <div id="content"></div>
@@ -29,7 +30,7 @@
         try {
           const response = await fetch(`../docs/${page}.md`);
           if (!response.ok) {
-            throw new Error(`Could not load ${page}.md`);
+            throw new Error(`No se pudo cargar el archivo ${page}.md`);
           }
           const markdown = await response.text();
           contentDiv.innerHTML = marked.parse(markdown);

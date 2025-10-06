@@ -1,8 +1,7 @@
-# Documentación del Gestor de Invitaciones JPi
+# Documentación del Gestor de Invitaciones JPi (v2.0)
 
 Bienvenido a la documentación oficial del Gestor de Invitaciones para la Jornada de Proyectos de Investigación (JPi).
 
-## Propósito
+Esta documentación ha sido actualizada para reflejar la **arquitectura modular (v2.0)** del frontend, que mejora significativamente la mantenibilidad y escalabilidad del proyecto.
 
-Esta aplicación de escritorio está diseñada para simplificar la administración de invitados a los eventos de la JPi. Permite registrar, visualizar, editar, eliminar y filtrar a los participantes, calculando automáticamente sus roles y elegibilidad como jurados.
-
+Utilice el menú de la izquierda para navegar por las diferentes secciones de la documentación.

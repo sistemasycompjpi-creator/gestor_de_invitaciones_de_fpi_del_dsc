@@ -1,73 +1,47 @@
 # Guía de Uso
 
-Sigue estos pasos para instalar y ejecutar el Gestor de Invitaciones JPi en tu sistema.
-
-## Requisitos Previos
-
-- **Node.js**: Versión 14 o superior. Puedes descargarlo desde [nodejs.org](https://nodejs.org/).
-- **Python**: Versión 3.8 o superior. Puedes descargarlo desde [python.org](https://www.python.org/).
-- **npm**: Se instala automáticamente con Node.js.
+Sigue estos pasos para instalar y utilizar el Gestor de Invitaciones JPi.
 
 ## Instalación
 
-1.  **Clona o descarga el proyecto** en tu máquina local.
-
-2.  **Abre una terminal** en la carpeta raíz del proyecto (`Invitaciones/`).
-
-3.  **Instala las dependencias de Node.js** (principalmente Electron). Este comando leerá el `package.json` y descargará lo necesario en la carpeta `node_modules/`.
-
+1.  **Requisitos**: Asegúrate de tener **Node.js** (v14+) y **Python** (v3.8+) instalados.
+2.  **Clona el proyecto** y abre una terminal en la carpeta raíz.
+3.  **Instala las dependencias** de Node.js con el comando:
     ```bash
     npm install
     ```
 
-    *Nota: El entorno virtual de Python y sus dependencias ya están incluidos en la carpeta `backend/`, por lo que no se requiere una configuración manual de Python.*
+## Ejecución
 
-## Ejecución de la Aplicación
-
-Para iniciar la aplicación, simplemente ejecuta el siguiente comando en la terminal desde la carpeta raíz del proyecto:
+Para iniciar la aplicación, ejecuta:
 
 ```bash
 npm start
 ```
 
-Este comando realiza las siguientes acciones en secuencia:
+La aplicación iniciará el servidor de fondo y abrirá la ventana principal.
 
-1.  Inicia el script principal de Electron definido en `package.json`.
-2.  Electron, a su vez, ejecuta el servidor de backend Flask (`backend/main.py`) en un proceso secundario.
-3.  El sistema espera a que el backend confirme que está listo (`health check`).
-4.  Finalmente, se abre la ventana de la aplicación de escritorio, cargando la interfaz de usuario.
+---
 
-## Funcionalidades Principales
+## Funcionalidades
 
-### Agregar un Invitado
+### Gestión de Invitados
 
-1.  Navega a la pestaña **"Agregar Invitado"**.
-2.  Completa el formulario. El **nombre completo** y el **carácter de la invitación** son campos requeridos.
-3.  Puedes añadir hasta 4 cargos y organizaciones, así como una nota opcional.
-4.  Marca los roles de asesoría (T1/T2) si corresponde. La elegibilidad como jurado se calculará automáticamente.
-5.  Haz clic en **"Guardar Invitado"**. Verás una notificación de éxito y serás redirigido a la lista.
+-   **Agregar**: Ve a la pestaña "Agregar Invitado", completa el formulario y guarda.
+-   **Editar**: En la lista de invitados, haz clic en el botón "✏️ Editar", modifica los datos y actualiza.
+-   **Eliminar**: Haz clic en "🗑️ Eliminar" en la tarjeta de un invitado y confirma la acción.
+-   **Filtrar**: Usa los botones en la parte superior de la lista para ver a los invitados por rol.
 
-### Ver y Filtrar Invitados
+### Generación de Invitaciones
 
-1.  La pestaña **"Lista de Invitados"** muestra a todos los participantes por defecto.
-2.  Usa los botones de filtro en la parte superior para acotar la lista por roles: `Asesor T1`, `Asesor T2`, `Jurado Protocolo` o `Jurado Informe`.
-3.  El contador junto a los filtros se actualiza dinámicamente para mostrar cuántos invitados coinciden con el filtro actual.
+La pestaña **"Generar Invitaciones"** te permite configurar y previsualizar las invitaciones en PDF.
 
-### Editar un Invitado
+1.  **Carga los 3 archivos PDF requeridos**: Plantilla, Convocatoria y Cronograma.
+2.  **Completa los datos del evento**: Año, periodo, fecha, etc.
+3.  **Previsualiza**: Usa los controles de navegación (← / →) y zoom para ver cómo se verá cada invitación.
 
-1.  En la lista de invitados, haz clic en el botón **"✏️ Editar"** en la tarjeta del invitado que deseas modificar.
-2.  Serás llevado a la pantalla del formulario, que se llenará automáticamente con los datos del invitado.
-3.  Realiza los cambios necesarios en el formulario.
-4.  Haz clic en el botón **"💾 Actualizar Invitado"**.
-5.  Los cambios se guardarán y serás redirigido de nuevo a la lista.
+**Nota Importante**: La interfaz de esta sección está 100% funcional para la configuración y previsualización. Sin embargo, el paso final de **generar los archivos PDF aún no está implementado en el backend**. Para detalles técnicos sobre cómo implementar esta función, consulta la **Guía de Desarrollo**.
 
-### Eliminar un Invitado
+### Estadísticas
 
-1.  En la lista de invitados, haz clic en el botón **"🗑️ Eliminar"** en la tarjeta del invitado.
-2.  Aparecerá un diálogo de confirmación para evitar eliminaciones accidentales.
-3.  Confirma la acción para eliminar permanentemente al invitado de la base de datos.
-
-### Ver Estadísticas
-
-1.  Navega a la pestaña **"Estadísticas"**.
-2.  Aquí encontrarás un resumen cuantitativo de los invitados registrados, desglosado por roles.
+La pestaña **"Estadísticas"** ofrece un resumen visual del número total de invitados y su distribución por roles.

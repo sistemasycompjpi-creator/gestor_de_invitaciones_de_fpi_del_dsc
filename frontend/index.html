@@ -228,23 +228,198 @@
             <h2>📄 Generar Invitaciones</h2>
           </div>
           <section class="invitaciones-section">
-            <div class="coming-soon">
-              <div class="coming-soon-icon">🚧</div>
-              <h3>Próximamente</h3>
-              <p>Esta funcionalidad estará disponible pronto.</p>
-              <p class="feature-description">
-                Podrás generar invitaciones personalizadas en PDF usando
-                plantillas y los datos de los invitados registrados.
-              </p>
-              <div class="planned-features">
-                <h4>Funcionalidades planeadas:</h4>
-                <ul>
-                  <li>✨ Selección de plantilla de invitación</li>
-                  <li>✨ Vista previa antes de generar</li>
-                  <li>✨ Generación individual o masiva</li>
-                  <li>✨ Personalización de textos y fechas</li>
-                  <li>✨ Exportar a carpeta del escritorio</li>
-                </ul>
+            <div class="invitaciones-container">
+              <!-- Panel Izquierdo: Configuración -->
+              <div class="invitaciones-panel-left">
+                <div class="panel-section">
+                  <h3>📁 Archivos Externos Requeridos</h3>
+                  <p class="section-description">
+                    Importa los 3 archivos PDF necesarios para generar las
+                    invitaciones
+                  </p>
+
+                  <div class="file-upload-group">
+                    <label for="file-plantilla-doc">
+                      <span class="file-label"
+                        >📄 Plantilla Base (PDF con formato de carta)</span
+                      >
+                      <input
+                        type="file"
+                        id="file-plantilla-doc"
+                        accept=".pdf"
+                      />
+                      <span class="file-status" id="status-plantilla-doc"
+                        >Sin seleccionar</span
+                      >
+                    </label>
+                  </div>
+
+                  <div class="file-upload-group">
+                    <label for="file-convocatoria">
+                      <span class="file-label">📋 Convocatoria (PDF)</span>
+                      <input type="file" id="file-convocatoria" accept=".pdf" />
+                      <span class="file-status" id="status-convocatoria"
+                        >Sin seleccionar</span
+                      >
+                    </label>
+                  </div>
+
+                  <div class="file-upload-group">
+                    <label for="file-cronograma">
+                      <span class="file-label"
+                        >📅 Cronograma y Croquis (PDF)</span
+                      >
+                      <input type="file" id="file-cronograma" accept=".pdf" />
+                      <span class="file-status" id="status-cronograma"
+                        >Sin seleccionar</span
+                      >
+                    </label>
+                  </div>
+                </div>
+
+                <div class="panel-section">
+                  <h3>📅 Configuración del Periodo</h3>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="periodo-anio">Año *</label>
+                      <input
+                        type="number"
+                        id="periodo-anio"
+                        placeholder="2025"
+                        min="2020"
+                        max="2050"
+                        required
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="periodo-numero">Periodo *</label>
+                      <select id="periodo-numero" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="1">1 (Enero - Junio)</option>
+                        <option value="3">3 (Agosto - Diciembre)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="panel-section">
+                  <h3>ℹ️ Información del Evento</h3>
+
+                  <div class="form-group">
+                    <label for="edicion-evento">Edición del Evento *</label>
+                    <input
+                      type="text"
+                      id="edicion-evento"
+                      placeholder="Ej: XVI Edición 2025.1"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="fecha-evento">Fecha del Evento *</label>
+                    <input
+                      type="text"
+                      id="fecha-evento"
+                      placeholder="Ej: viernes 13 de junio de 2025"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="fecha-carta">Fecha de la Carta *</label>
+                    <input type="date" id="fecha-carta" required />
+                  </div>
+                </div>
+
+                <div class="panel-section">
+                  <h3>🎯 Generación de Invitaciones</h3>
+
+                  <div class="output-info">
+                    <p><strong>📂 Carpeta de destino:</strong></p>
+                    <p class="output-path" id="output-path">
+                      ~/Desktop/<span id="folder-name-display"
+                        >Configurar año y periodo primero</span
+                      >/
+                    </p>
+                    <p class="section-description" style="margin-top: 15px">
+                      Se generarán invitaciones para
+                      <strong>todos los invitados registrados</strong> en la
+                      base de datos.
+                    </p>
+                    <p class="section-description">
+                      Nomenclatura:
+                      <code
+                        >{{año}}.{{periodo}}-FPiT-DOSSIER-{{Organización_1}}-{{Nombre}}</code
+                      >
+                    </p>
+                  </div>
+
+                  <button class="btn btn-primary btn-large" id="btn-generar">
+                    🚀 Generar Todas las Invitaciones
+                  </button>
+
+                  <div
+                    class="progress-container"
+                    id="progress-container"
+                    style="display: none"
+                  >
+                    <div class="progress-bar">
+                      <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <p class="progress-text" id="progress-text">
+                      Generando... 0%
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Panel Derecho: Vista Previa -->
+              <div class="invitaciones-panel-right">
+                <div class="preview-container">
+                  <h3>👁️ Vista Previa</h3>
+
+                  <div class="preview-controls">
+                    <button class="btn-icon" id="btn-zoom-out" title="Alejar">
+                      🔍−
+                    </button>
+                    <span id="zoom-level">100%</span>
+                    <button class="btn-icon" id="btn-zoom-in" title="Acercar">
+                      🔍+
+                    </button>
+                  </div>
+
+                  <div class="preview-content" id="preview-content">
+                    <div class="preview-placeholder">
+                      <div class="placeholder-icon">📄</div>
+                      <p>La vista previa aparecerá aquí</p>
+                      <p class="placeholder-hint">
+                        Completa los campos del evento para ver la vista previa
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="preview-footer">
+                    <button
+                      class="btn btn-secondary"
+                      id="btn-preview-prev"
+                      disabled
+                    >
+                      ← Anterior
+                    </button>
+                    <span id="preview-counter"
+                      >Previsualizando invitados registrados</span
+                    >
+                    <button
+                      class="btn btn-secondary"
+                      id="btn-preview-next"
+                      disabled
+                    >
+                      Siguiente →
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -323,6 +498,14 @@
       </div>
     </div>
 
-    <script src="./js/app.js"></script>
+    <!-- Scripts modulares - orden de carga importante -->
+    <script src="./js/api.js"></script>
+    <script src="./js/ui.js"></script>
+    <script src="./js/navigation.js"></script>
+    <script src="./js/estadisticas.js"></script>
+    <script src="./js/invitados-lista.js"></script>
+    <script src="./js/invitados-form.js"></script>
+    <script src="./js/invitaciones.js"></script>
+    <script src="./js/main.js"></script>
   </body>
 </html>
