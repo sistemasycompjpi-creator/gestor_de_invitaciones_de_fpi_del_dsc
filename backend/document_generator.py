@@ -5,6 +5,7 @@ Genera invitaciones en PDF a partir de plantillas DOCX
 
 import os
 import re
+import time
 from pathlib import Path
 import fitz  # PyMuPDF
 from docxtpl import DocxTemplate
@@ -70,6 +71,7 @@ def _render_template(invitado_data, context_general):
     doc.render(context)
     filled_docx_path = TEMP_DIR / f"filled_{invitado_data['id']}.docx"
     doc.save(filled_docx_path)
+    time.sleep(0.1)  # Pausa para asegurar que el archivo se libere en el sistema
     return filled_docx_path
 
 

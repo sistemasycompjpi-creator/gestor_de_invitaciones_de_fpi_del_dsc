@@ -300,6 +300,7 @@ async function generarInvitaciones() {
     </div>
   `;
   document.body.appendChild(modalOverlay);
+  modalOverlay.classList.add("show");
 
   const statusText = document.getElementById("progress-status-text");
   const progressFill = document.getElementById("progress-fill-large");
