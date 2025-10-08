@@ -9,8 +9,7 @@ let invitacionesState = {
     cronograma: null,
   },
   archivosSubidos: false,
-  generationMode: 'todos', // 'todos' o 'individual'
-  outputDir: null,
+  generationMode: "todos", // 'todos' o 'individual'
 };
 
 /**
@@ -22,7 +21,6 @@ function inicializarInvitaciones() {
   configurarPeriodo();
   configurarModoGeneracion();
   cargarInvitadosParaSelector();
-  configurarSeleccionDirectorio();
 }
 
 /**
@@ -192,25 +190,6 @@ function configurarPeriodo() {
 }
 
 /**
- * Configura el botón para seleccionar el directorio de salida
- */
-function configurarSeleccionDirectorio() {
-  const btnSelectDir = document.getElementById("btn-select-output-dir");
-  if (btnSelectDir) {
-    btnSelectDir.addEventListener("click", async () => {
-      const selectedDir = await window.API.selectDirectory();
-      if (selectedDir) {
-        invitacionesState.outputDir = selectedDir;
-        const outputPathEl = document.getElementById("output-path");
-        if (outputPathEl) {
-          outputPathEl.textContent = selectedDir;
-        }
-      }
-    });
-  }
-}
-
-/**
  * Configura el botón de generación
  */
 function configurarGeneracion() {
@@ -244,7 +223,11 @@ function actualizarFolderName() {
 async function generarInvitaciones() {
   // 1. Validar estado y campos
   if (!invitacionesState.archivosSubidos) {
-    return window.UI.mostrarModal("⚠️ Archivos no cargados", "Primero debes cargar los archivos base.", "⚠️");
+    return window.UI.mostrarModal(
+      "⚠️ Archivos no cargados",
+      "Primero debes cargar los archivos base.",
+      "⚠️"
+    );
   }
 
   const eventData = {
@@ -253,46 +236,59 @@ async function generarInvitaciones() {
     edicion_evento: document.getElementById("edicion-evento").value,
     fecha_evento: document.getElementById("fecha-evento").value,
     fecha_carta: document.getElementById("fecha-carta").value,
-    output_dir: invitacionesState.outputDir,
   };
 
-  if (!invitacionesState.outputDir) {
-    return window.UI.mostrarModal("⚠️ Directorio no seleccionado", "Por favor selecciona una carpeta de destino para las invitaciones.", "⚠️");
-  }
-
-  if (!eventData.anio || !eventData.periodo || !eventData.edicion_evento || !eventData.fecha_evento || !eventData.fecha_carta) {
-    return window.UI.mostrarModal("⚠️ Campos Incompletos", "Por favor completa todos los campos de configuración del evento.", "⚠️");
+  if (
+    !eventData.anio ||
+    !eventData.periodo ||
+    !eventData.edicion_evento ||
+    !eventData.fecha_evento ||
+    !eventData.fecha_carta
+  ) {
+    return window.UI.mostrarModal(
+      "⚠️ Campos Incompletos",
+      "Por favor completa todos los campos de configuración del evento.",
+      "⚠️"
+    );
   }
 
   let invitadoId = null;
-  if (invitacionesState.generationMode === 'individual') {
-    invitadoId = document.getElementById('invitado-selector').value;
+  if (invitacionesState.generationMode === "individual") {
+    invitadoId = document.getElementById("invitado-selector").value;
     if (!invitadoId) {
-      return window.UI.mostrarModal("⚠️ Invitado no seleccionado", "Por favor selecciona un invitado de la lista.", "⚠️");
+      return window.UI.mostrarModal(
+        "⚠️ Invitado no seleccionado",
+        "Por favor selecciona un invitado de la lista.",
+        "⚠️"
+      );
     }
   }
 
   // 2. Bloquear UI y mostrar progreso
   const btnGenerar = document.getElementById("btn-generar");
   btnGenerar.disabled = true;
-  
-  const progressOverlay = document.createElement('div');
-  progressOverlay.className = 'progress-overlay';
-  progressOverlay.innerHTML = '<div class="progress-spinner"></div><p>Generando, por favor espera...</p>';
+
+  const progressOverlay = document.createElement("div");
+  progressOverlay.className = "progress-overlay";
+  progressOverlay.innerHTML =
+    '<div class="progress-spinner"></div><p>Generando, por favor espera...</p>';
   document.body.appendChild(progressOverlay);
 
   try {
     let result;
-    if (invitacionesState.generationMode === 'individual') {
+    if (invitacionesState.generationMode === "individual") {
       result = await window.API.generateSingleInvitation(invitadoId, eventData);
     } else {
-      const response = await fetch("http://127.0.0.1:5000/api/generate-all-invitations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(eventData),
-      });
+      const response = await fetch(
+        "http://127.0.0.1:5000/api/generate-all-invitations",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(eventData),
+        }
+      );
       result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Error en el servidor');
+      if (!response.ok) throw new Error(result.error || "Error en el servidor");
     }
 
     const successMessage = `
@@ -301,10 +297,13 @@ async function generarInvitaciones() {
         <p style="margin: 10px 0;"><strong>📂 Ubicación:</strong><br><code class="code-block">${result.output_folder}</code></p>
       </div>`;
     window.UI.mostrarModal("✅ Generación Completada", successMessage, "✅");
-
   } catch (error) {
     console.error("Error al generar invitaciones:", error);
-    window.UI.mostrarModal("❌ Error de Generación", `No se pudieron generar las invitaciones: ${error.message}`, "❌");
+    window.UI.mostrarModal(
+      "❌ Error de Generación",
+      `No se pudieron generar las invitaciones: ${error.message}`,
+      "❌"
+    );
   } finally {
     // 5. Desbloquear UI
     btnGenerar.disabled = false;
@@ -353,25 +352,33 @@ function limpiarFormularioInvitaciones() {
  * Configura los radio buttons para elegir el modo de generación
  */
 function configurarModoGeneracion() {
-  document.querySelectorAll('input[name="generation-type"]').forEach(radio => {
-    radio.addEventListener('change', (e) => {
-      invitacionesState.generationMode = e.target.value;
-      const selectorContainer = document.getElementById('invitado-selector-container');
-      selectorContainer.classList.toggle('hidden', invitacionesState.generationMode !== 'individual');
+  document
+    .querySelectorAll('input[name="generation-type"]')
+    .forEach((radio) => {
+      radio.addEventListener("change", (e) => {
+        invitacionesState.generationMode = e.target.value;
+        const selectorContainer = document.getElementById(
+          "invitado-selector-container"
+        );
+        selectorContainer.classList.toggle(
+          "hidden",
+          invitacionesState.generationMode !== "individual"
+        );
+      });
     });
-  });
 }
 
 /**
  * Carga la lista de invitados en el selector
  */
 async function cargarInvitadosParaSelector() {
-  const selector = document.getElementById('invitado-selector');
+  const selector = document.getElementById("invitado-selector");
   try {
     const invitados = await window.API.obtenerInvitados();
-    selector.innerHTML = '<option value="">-- Selecciona un invitado --</option>'; // Opción por defecto
-    invitados.forEach(inv => {
-      const option = document.createElement('option');
+    selector.innerHTML =
+      '<option value="">-- Selecciona un invitado --</option>'; // Opción por defecto
+    invitados.forEach((inv) => {
+      const option = document.createElement("option");
       option.value = inv.id;
       option.textContent = `${inv.nombre_completo} (ID: ${inv.id})`;
       selector.appendChild(option);
@@ -387,3 +394,4 @@ window.Invitaciones = {
   inicializar: inicializarInvitaciones,
   limpiarFormulario: limpiarFormularioInvitaciones,
 };
+

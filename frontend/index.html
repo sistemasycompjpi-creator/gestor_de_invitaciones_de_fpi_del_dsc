@@ -363,25 +363,59 @@
                   <div class="segmented-control">
                     <div class="generation-mode">
                       <label>
-                        <input type="radio" name="generation-type" value="todos" checked>
-                        <span>Generar para <strong>TODOS</strong> los invitados</span>
+                        <input
+                          type="radio"
+                          name="generation-type"
+                          value="todos"
+                          checked
+                        />
+                        <span
+                          >Generar para <strong>TODOS</strong> los
+                          invitados</span
+                        >
                       </label>
                       <label>
-                        <input type="radio" name="generation-type" value="individual">
-                        <span>Generar para <strong>UN SOLO</strong> invitado</span>
+                        <input
+                          type="radio"
+                          name="generation-type"
+                          value="individual"
+                        />
+                        <span
+                          >Generar para <strong>UN SOLO</strong> invitado</span
+                        >
                       </label>
                     </div>
                   </div>
 
                   <div id="invitado-selector-container" class="hidden">
-                    <label for="invitado-selector">Selecciona un invitado *</label>
+                    <label for="invitado-selector"
+                      >Selecciona un invitado *</label
+                    >
                     <select id="invitado-selector"></select>
                   </div>
 
                   <div class="output-info">
                     <p><strong>📂 Carpeta de destino:</strong></p>
-                    <button class="btn btn-secondary" id="btn-select-output-dir">Seleccionar Carpeta</button>
-                    <p class="output-path" id="output-path">No seleccionada</p>
+                    <p
+                      class="output-path"
+                      style="font-size: 14px; color: var(--primary)"
+                    >
+                      Desktop\<span
+                        id="folder-name-display"
+                        style="font-weight: bold"
+                        >Configurar año y periodo primero</span
+                      >
+                    </p>
+                    <p
+                      style="
+                        font-size: 12px;
+                        color: var(--text-secondary);
+                        margin-top: 5px;
+                      "
+                    >
+                      ℹ️ Las invitaciones se guardarán automáticamente en tu
+                      escritorio
+                    </p>
                   </div>
 
                   <button class="btn btn-primary btn-large" id="btn-generar">
@@ -609,42 +643,72 @@
             <section class="panel-section">
               <h3>📥 Importar Invitados</h3>
               <p class="section-hint">
-                Sube un archivo Excel (.xlsx) o CSV (.csv) para agregar invitados en masa.
+                Sube un archivo Excel (.xlsx) o CSV (.csv) para agregar
+                invitados en masa.
               </p>
-              
+
               <div class="form-group">
                 <label>Paso 1: Descarga la plantilla mejorada.</label>
-                <p class="section-hint" style="margin-bottom: 10px;">El archivo Excel contiene una hoja de "Instrucciones" que explica cada columna.</p>
-                <button class="btn btn-secondary" id="btn-generar-plantilla">📄 Descargar Plantilla con Instrucciones</button>
+                <p class="section-hint" style="margin-bottom: 10px">
+                  El archivo Excel contiene una hoja de "Instrucciones" que
+                  explica cada columna.
+                </p>
+                <button class="btn btn-secondary" id="btn-generar-plantilla">
+                  📄 Descargar Plantilla con Instrucciones
+                </button>
               </div>
 
               <div class="form-group">
-                <label for="input-file-import">Paso 2: Selecciona el archivo a importar.</label>
-                 <p class="section-hint" style="margin-bottom: 10px;">Asegúrate de que los campos de tipo "Sí/No" (como "Es Invitado Especial") usen <strong>1 para Sí</strong> y <strong>0 para No</strong>.</p>
-                <input type="file" id="input-file-import" accept=".xlsx, .xls, .csv" />
+                <label for="input-file-import"
+                  >Paso 2: Selecciona el archivo a importar.</label
+                >
+                <p class="section-hint" style="margin-bottom: 10px">
+                  Asegúrate de que los campos de tipo "Sí/No" (como "Es Invitado
+                  Especial") usen <strong>1 para Sí</strong> y
+                  <strong>0 para No</strong>.
+                </p>
+                <input
+                  type="file"
+                  id="input-file-import"
+                  accept=".xlsx, .xls, .csv"
+                />
               </div>
 
               <div class="form-actions">
-                <button class="btn btn-primary" id="btn-importar-archivo">🚀 Importar Archivo</button>
+                <button class="btn btn-primary" id="btn-importar-archivo">
+                  🚀 Importar Archivo
+                </button>
               </div>
-              
-              <div id="import-feedback" style="display: none; margin-top: 15px; padding: 10px; border-radius: 5px;"></div>
+
+              <div
+                id="import-feedback"
+                style="
+                  display: none;
+                  margin-top: 15px;
+                  padding: 10px;
+                  border-radius: 5px;
+                "
+              ></div>
             </section>
 
             <!-- Sección de Exportación -->
             <section class="panel-section">
               <h3>📤 Exportar Invitados</h3>
               <p class="section-hint">
-                Descarga la lista completa de invitados registrados. Los campos booleanos se exportarán como 1 (Sí) y 0 (No).
+                Descarga la lista completa de invitados registrados. Los campos
+                booleanos se exportarán como 1 (Sí) y 0 (No).
               </p>
               <div class="form-actions-export">
-                <button class="btn btn-success" id="btn-exportar-excel">📗 Exportar a Excel</button>
-                <button class="btn btn-info" id="btn-exportar-csv">📘 Exportar a CSV</button>
+                <button class="btn btn-success" id="btn-exportar-excel">
+                  📗 Exportar a Excel
+                </button>
+                <button class="btn btn-info" id="btn-exportar-csv">
+                  📘 Exportar a CSV
+                </button>
               </div>
             </section>
           </div>
         </div>
-
       </main>
     </div>
 
@@ -674,3 +738,4 @@
     <script src="./js/main.js"></script>
   </body>
 </html>
+

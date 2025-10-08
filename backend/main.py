@@ -358,12 +358,18 @@ def generate_all_invitations():
     generated_count = 0
     errors_list = []
     
-    output_dir = data.get("output_dir")
-    if not output_dir:
-        return jsonify({
-            'success': False,
-            'error': 'No se ha especificado un directorio de salida'
-        }), 400
+    # Generar carpeta automáticamente en el Desktop
+    anio = data.get("anio")
+    periodo = data.get("periodo")
+    folder_name = f"{anio}.{periodo}-invitaciones"
+    
+    # Obtener ruta del Desktop del usuario
+    desktop_path = Path.home() / "Desktop"
+    output_dir = str(desktop_path / folder_name)
+    
+    # Crear el directorio si no existe
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    logging.info(f"Carpeta de salida creada/verificada: {output_dir}")
 
     # Bucle para generar una invitación por cada invitado
     for invitado in invitados:
@@ -373,13 +379,18 @@ def generate_all_invitations():
         invitado_dict['institucion'] = getattr(invitado, 'institucion', '')
         invitado_dict['abreviacion_org'] = getattr(invitado, 'abreviacion_org', '')
         
+        logging.info(f"Generando invitación para: {invitado.nombre_completo} (ID: {invitado.id})")
         result = generate_full_dossier(invitado_dict, context_general, output_dir)
+        
         if result["success"]:
             generated_count += 1
+            logging.info(f"✓ Invitación generada exitosamente para {invitado.nombre_completo}")
         else:
+            error_msg = result.get('error', 'Error desconocido')
+            logging.error(f"✗ Error generando invitación para {invitado.nombre_completo}: {error_msg}")
             errors_list.append({
                 'invitado': invitado.nombre_completo,
-                'error': result['error']
+                'error': error_msg
             })
 
     return jsonify({
@@ -411,9 +422,18 @@ def generate_single_invitation(invitado_id):
     if not all(context_general.values()):
         return jsonify({'success': False, 'error': 'Faltan datos del evento'}), 400
 
-    output_dir = data.get("output_dir")
-    if not output_dir:
-        return jsonify({'success': False, 'error': 'No se ha especificado un directorio de salida'}), 400
+    # Generar carpeta automáticamente en el Desktop
+    anio = data.get("anio")
+    periodo = data.get("periodo")
+    folder_name = f"{anio}.{periodo}-invitaciones"
+    
+    # Obtener ruta del Desktop del usuario
+    desktop_path = Path.home() / "Desktop"
+    output_dir = str(desktop_path / folder_name)
+    
+    # Crear el directorio si no existe
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    logging.info(f"Carpeta de salida creada/verificada: {output_dir}")
 
     invitado = Invitado.query.get(invitado_id)
     if not invitado:
@@ -424,19 +444,23 @@ def generate_single_invitation(invitado_id):
     invitado_dict['institucion'] = getattr(invitado, 'institucion', '')
     invitado_dict['abreviacion_org'] = getattr(invitado, 'abreviacion_org', '')
     
+    logging.info(f"Generando invitación individual para: {invitado.nombre_completo} (ID: {invitado.id})")
     result = generate_full_dossier(invitado_dict, context_general, output_dir)
     
     if result["success"]:
+        logging.info(f"✓ Invitación generada exitosamente para {invitado.nombre_completo}")
         return jsonify({
             'success': True,
             'message': f"Se generó la invitación para {invitado.nombre_completo} correctamente.",
             'output_folder': output_dir,
-            'file_path': result.get('file_path')
+            'file_path': result.get('path')
         }), 200
     else:
+        error_msg = result.get('error', 'Error desconocido')
+        logging.error(f"✗ Error generando invitación para {invitado.nombre_completo}: {error_msg}")
         return jsonify({
             'success': False,
-            'error': result['error'],
+            'error': error_msg,
             'invitado': invitado.nombre_completo
         }), 500
 

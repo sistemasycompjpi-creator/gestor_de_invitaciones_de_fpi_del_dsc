@@ -29,20 +29,12 @@
     "files": [
       "electron-app/**/*",
       "frontend/**/*",
-      "assets/**/*",
-      "!backend/venv/Lib/site-packages/pip*/**/*",
-      "!backend/venv/Lib/site-packages/setuptools*/**/*"
+      "assets/**/*"
     ],
     "extraResources": [
       {
-        "from": "backend",
-        "to": "backend",
-        "filter": [
-          "**/*",
-          "!**/__pycache__/**",
-          "!**/venv/Lib/site-packages/pip*/**",
-          "!**/venv/Lib/site-packages/setuptools*/**"
-        ]
+        "from": "backend/dist/backend.exe",
+        "to": "backend.exe"
       }
     ],
     "win": {

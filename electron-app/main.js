@@ -1,4 +1,11 @@
-const { app, BrowserWindow, Menu, shell, ipcMain, dialog } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  Menu,
+  shell,
+  ipcMain,
+  dialog,
+} = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -151,43 +158,46 @@ ${error.message}`;
     return filePaths[0];
   });
 
+  ipcMain.handle("get-desktop-path", async () => {
+    return app.getPath("desktop");
+  });
+
   // Construir y establecer el menú
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);
 
-  // --- DETECTAR SI ESTAMOS EN DESARROLLO O EMPAQUETADO ---
-  let pythonExecutable;
-  let backendScript;
-
-  if (app.isPackaged) {
-    // PRODUCCIÓN: La app está empaquetada como .exe
-    // Electron-builder copia todo a la carpeta 'resources'
-    console.log("🚀 Ejecutando en modo PRODUCCIÓN (empaquetado)");
-    pythonExecutable = path.join(
-      process.resourcesPath,
-      "backend/venv/Scripts/python.exe"
-    );
-    backendScript = path.join(process.resourcesPath, "backend/main.py");
-  } else {
-    // DESARROLLO: npm start o electron .
-    pythonExecutable = path.join(
-      __dirname,
-      "../backend/venv/Scripts/python.exe"
-    );
-    backendScript = path.join(__dirname, "../backend/main.py");
-  }
-
-  console.log(`Python executable: ${pythonExecutable}`);
-  console.log(`Backend script: ${backendScript}`);
-
   // --- OBTENER RUTA DE DATOS DEL USUARIO ---
-  const userDataPath = app.getPath('userData');
+  const userDataPath = app.getPath("userData");
   console.log(`Ruta de datos del usuario (userData): ${userDataPath}`);
 
   console.log("Iniciando servidor Flask...");
 
-  // --- PASAR LA RUTA DE DATOS COMO ARGUMENTO AL SCRIPT DE PYTHON ---
-  backendProcess = spawn(pythonExecutable, [backendScript, userDataPath]);
+  // --- DETECTAR SI ESTAMOS EN DESARROLLO O EMPAQUETADO ---
+  let backendExecutable;
+
+  if (app.isPackaged) {
+    // PRODUCCIÓN: La app está empaquetada como .exe
+    console.log("🚀 Ejecutando en modo PRODUCCIÓN (empaquetado)");
+    // La ruta ahora apunta directamente al backend.exe en la carpeta 'resources'
+    backendExecutable = path.join(process.resourcesPath, "backend.exe");
+    console.log(`Backend executable: ${backendExecutable}`);
+
+    // --- PASAR LA RUTA DE DATOS COMO ARGUMENTO AL EJECUTABLE ---
+    backendProcess = spawn(backendExecutable, [userDataPath]);
+  } else {
+    // DESARROLLO: npm start o electron .
+    console.log("💻 Ejecutando en modo DESARROLLO");
+    const pythonExecutable = path.join(
+      __dirname,
+      "../backend/venv/Scripts/python.exe"
+    );
+    const backendScript = path.join(__dirname, "../backend/main.py");
+    console.log(`Python executable: ${pythonExecutable}`);
+    console.log(`Backend script: ${backendScript}`);
+
+    // --- PASAR LA RUTA DE DATOS COMO ARGUMENTO AL SCRIPT DE PYTHON ---
+    backendProcess = spawn(pythonExecutable, [backendScript, userDataPath]);
+  }
 
   backendProcess.stdout.on("data", (data) => {
     console.log(`Backend stdout: ${data}`);
