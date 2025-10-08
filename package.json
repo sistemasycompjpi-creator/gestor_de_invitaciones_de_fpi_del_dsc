@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
-    "build:win": "electron-builder --win"
+    "build:win": "rimraf dist && electron-builder --win"
   },
   "keywords": [
     "invitaciones",
@@ -18,7 +18,8 @@
   "type": "commonjs",
   "devDependencies": {
     "electron": "^38.2.0",
-    "electron-builder": "^26.0.12"
+    "electron-builder": "^26.0.12",
+    "rimraf": "^6.0.1"
   },
   "build": {
     "appId": "com.jpi.invitaciones",

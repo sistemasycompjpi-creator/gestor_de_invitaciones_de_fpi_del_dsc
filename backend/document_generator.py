@@ -101,7 +101,28 @@ def _render_template(invitado_data, context_general):
     logger.info("   🔄 Renderizando plantilla con datos...")
     doc.render(context)
     
-    filled_docx_path = TEMP_DIR / f"filled_{invitado_data['id']}.docx"
+    # Crear nombre descriptivo para el archivo temporal
+    # Formato: {año}.{periodo}-{siglas_institucion}_{nombre_completo}_{version}.docx
+    anio = context_general.get('anio', 'XXXX')
+    periodo = context_general.get('periodo', 'X')
+    
+    # Limpiar nombre del invitado (eliminar caracteres inválidos y truncar)
+    nombre_original = invitado_data.get('nombre_completo', 'INVITADO')
+    nombre_limpio = re.sub(r'[\\/*?:"<>|]', "", nombre_original)
+    nombre_truncado = nombre_limpio[:50].replace(" ", "_")
+    
+    # Obtener y limpiar abreviación de la organización
+    abreviacion = invitado_data.get('abreviacion_org', '')
+    siglas_institucion = re.sub(r'[\\/*?:"<>|]', "", abreviacion).replace(" ", "_") if abreviacion else 'ORG'
+    
+    # Extraer versión del nombre de la plantilla si existe (ej: plantilla_base_v02.docx)
+    template_name = template_path.stem  # Nombre sin extensión
+    version_match = re.search(r'v(\d+)', template_name, re.IGNORECASE)
+    version = version_match.group(0) if version_match else 'v01'
+    
+    temp_filename = f"{anio}.{periodo}-{siglas_institucion}_{nombre_truncado}_{version}.docx"
+    filled_docx_path = TEMP_DIR / temp_filename
+    
     logger.info(f"   💾 Guardando plantilla renderizada: {filled_docx_path}")
     doc.save(filled_docx_path)
     
